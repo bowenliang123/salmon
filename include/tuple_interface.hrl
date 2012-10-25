@@ -1,0 +1,3 @@
+-record (tupleMessage, {
+message = "nomessage"
+}).
