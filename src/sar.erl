@@ -64,35 +64,34 @@ travseSingleSpout(TopoId, SpoutsRootPath, SpoutName) ->
 	SpoutCount = SpoutInfo#type_info.count,
 	
 	io:format("~p~p~p~n", [SpoutName,SpoutCount,SpoutPath]),
-	travseSingleSpoutByNum(TopoId,SpoutName,SpoutPath,SpoutCount),
+	travseWorkers(TopoId,SpoutName,SpoutPath,SpoutCount),
 	ok.
 
-travseSingleSpoutByNum(TopoId, SpoutTypeName, SpoutTypePath, SingleTypeSpoutCount) ->
-	if SingleTypeSpoutCount > 0 ->
-			SingleTypeSpoutIndex = SingleTypeSpoutCount - 1,
-			SpoutNumPath = utils:concatStrs([SpoutTypePath, "/", SingleTypeSpoutIndex]),
+travseWorkers(TopoId, SpoutName, SpoutPath, WorkerCount) ->
+	if WorkerCount > 0 ->
+			SingleTypeSpoutIndex = WorkerCount - 1,
+			SpoutNumPath = utils:concatStrs([SpoutPath, "/", SingleTypeSpoutIndex]),
 			SingleSpoutInfo = utils:zkget(SpoutNumPath),
-			IsServerSet = checkServer(SingleSpoutInfo),
+			IsServerReady = checkServerReady(SingleSpoutInfo),
 			if 
-				IsServerSet /= true ->
-				  setupSpoutServer(TopoId,SpoutTypeName,SingleTypeSpoutIndex);
+				IsServerReady /= true ->
+				  setupSpoutServer(TopoId,SpoutName,SingleTypeSpoutIndex);
 				true ->
 					io:format("spoutSever has been already set!～n"),
-					setupSpoutServer(TopoId,SpoutTypeName,SingleTypeSpoutIndex)
+					setupSpoutServer(TopoId,SpoutName,SingleTypeSpoutIndex)
 			end,
 			
-			travseSingleSpoutByNum(TopoId, SpoutTypeName, SpoutTypePath, SingleTypeSpoutCount - 1);
+			travseWorkers(TopoId, SpoutName, SpoutPath, WorkerCount - 1);
 		  true ->
 			  ok
 	end.
 
-checkServer(SingleInfo) ->
+checkServerReady(SingleInfo) ->
 	if 
 		(SingleInfo#worker_info.self_name == null_server) or (SingleInfo#worker_info.node_name == null_node) ->
 			false;
 		true ->
 			true
-			
 	end.
 
 setupSpoutServer(TopoId,SpoutTypeName,SingleTypeSpoutIndex) ->
