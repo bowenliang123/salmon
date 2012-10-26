@@ -35,7 +35,7 @@ listen_spouts(TopoId) ->
 	SpoutsList = utils:zkget(SpoutsPath),
 	io:format("~p~n", [SpoutsList]),
 	
-	travseSpouts(TopoId, SpoutsPath, SpoutsList),
+	travseSpouts(TopoId, SpoutsList),
  ok.
 
 
@@ -49,15 +49,15 @@ listen_bolts()->
 %%
 %% Local Functions
 %%
-travseSpouts(TopoId, SpoutsRootPath, []) ->
+travseSpouts(TopoId, []) ->
 	ok;
-travseSpouts(TopoId, SpoutsRootPath, [H|T] = SpoutTypeList) ->
-	travseSingleSpout(TopoId, SpoutsRootPath, H),
-	travseSpouts(TopoId,SpoutsRootPath,T),
+travseSpouts(TopoId, [H|T] = SpoutTypeList) ->
+	travseSingleSpout(TopoId, H),
+	travseSpouts(TopoId, T),
 	ok.
 
 
-travseSingleSpout(TopoId, SpoutsRootPath, SpoutName) ->
+travseSingleSpout(TopoId, SpoutName) ->
 	
 	SpoutPath = zkpath:genPath(TopoId, spouts, SpoutName),
 	SpoutInfo = utils:zkget(SpoutPath),
@@ -86,14 +86,15 @@ travseWorkers(TopoId, SpoutName, SpoutPath, WorkerCount) ->
 			  ok
 	end.
 
-checkServerReady(SingleInfo) ->
+checkServerReady(WorkerInfo) ->
 	if 
-		(SingleInfo#worker_info.self_name == null_server) or (SingleInfo#worker_info.node_name == null_node) ->
+		 (WorkerInfo#worker_info.self_name == null_server)
+		 or (WorkerInfo#worker_info.node_name == null_node) ->
 			false;
 		true ->
 			true
 	end.
 
-setupSpoutServer(TopoId,SpoutTypeName,SingleTypeSpoutIndex) ->
-	io:format("~p~p~p~n", [TopoId,SpoutTypeName,SingleTypeSpoutIndex]),
-	spout_server:start_link(TopoId,SpoutTypeName,SingleTypeSpoutIndex).
+setupSpoutServer(TopoId,SpoutName,Index) ->
+	io:format("~p~p~p~n", [TopoId,SpoutName,Index]),
+	spout_server:start_link(TopoId,SpoutName,Index).
