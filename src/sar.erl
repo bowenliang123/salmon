@@ -35,7 +35,7 @@ listen_spouts(TopoId) ->
 	SpoutsList = utils:zkget(SpoutsPath),
 	io:format("~p~n", [SpoutsList]),
 	
-	travseSpouts(TopoId, SpoutsList),
+	travse(TopoId, spouts, SpoutsList),
  ok.
 
 
@@ -49,52 +49,54 @@ listen_bolts()->
 %%
 %% Local Functions
 %%
-travseSpouts(TopoId, []) ->
+travse(TopoId,Type, []) ->
 	ok;
-travseSpouts(TopoId, [H|T] = SpoutTypeList) ->
-	travseSingleSpout(TopoId, H),
-	travseSpouts(TopoId, T),
-	ok.
+travse(TopoId, Type, [H|T] = SpoutNameList) ->
+	travseSingleSpout(TopoId, Type, H),
+	travse(TopoId, Type, T).
 
 
-travseSingleSpout(TopoId, SpoutName) ->
+travseSingleSpout(TopoId, Type, SpoutName) ->
 	
-	SpoutPath = zkpath:genPath(TopoId, spouts, SpoutName),
+	SpoutPath = zkpath:genPath(TopoId, Type, SpoutName),
 	SpoutInfo = utils:zkget(SpoutPath),
 	SpoutCount = SpoutInfo#type_info.count,
 	
 	io:format("~p~p~p~n", [SpoutName,SpoutCount,SpoutPath]),
-	travseWorkers(TopoId,SpoutName,SpoutPath,SpoutCount),
+	checkWorker(TopoId, Type, SpoutName, SpoutCount - 1),
 	ok.
 
-travseWorkers(TopoId, SpoutName, SpoutPath, WorkerCount) ->
-	if WorkerCount > 0 ->
-			SingleTypeSpoutIndex = WorkerCount - 1,
-			SpoutNumPath = utils:concatStrs([SpoutPath, "/", SingleTypeSpoutIndex]),
-			SingleSpoutInfo = utils:zkget(SpoutNumPath),
-			IsServerReady = checkServerReady(SingleSpoutInfo),
-			if 
-				IsServerReady /= true ->
-				  setupSpoutServer(TopoId,SpoutName,SingleTypeSpoutIndex);
-				true ->
-					io:format("spoutSever has been already set!～n"),
-					setupSpoutServer(TopoId,SpoutName,SingleTypeSpoutIndex)
-			end,
-			
-			travseWorkers(TopoId, SpoutName, SpoutPath, WorkerCount - 1);
-		  true ->
-			  ok
-	end.
 
-checkServerReady(WorkerInfo) ->
-	if 
-		 (WorkerInfo#worker_info.self_name == null_server)
-		 or (WorkerInfo#worker_info.node_name == null_node) ->
+checkWorker(_,_,_,-1) ->
+	ok;
+checkWorker(TopoId, Type, SpoutName, Index) ->
+   WorkerPath = zkpath:genPath(TopoId, Type, SpoutName, Index),
+   SingleSpoutInfo = utils:zkget(WorkerPath),
+   IsServerReady = checkWorkerReady(SingleSpoutInfo),
+   if
+	   IsServerReady /= true ->
+	     setupWorker(TopoId, spout, SpoutName, Index);
+	   true ->
+		   io:format("spoutSever has been already set!～n"),
+		   setupWorker(TopoId, spout, SpoutName, Index)
+   end,
+
+   checkWorker(TopoId, Type, SpoutName, Index - 1).
+
+checkWorkerReady(WorkerInfo) ->
+	#worker_info{self_name = Server,node_name = Node} = WorkerInfo,
+	if
+		(Server == null_server) or (Node == null_node) ->
 			false;
 		true ->
 			true
 	end.
 
-setupSpoutServer(TopoId,SpoutName,Index) ->
-	io:format("~p~p~p~n", [TopoId,SpoutName,Index]),
-	spout_server:start_link(TopoId,SpoutName,Index).
+setupWorker(TopoId, Type, Name, Index) ->
+	io:format("Try to setup Server.~n(TopoId:~p,Type:~p,Name:~p,Index:~p)~n", [TopoId,Type,Name,Index]),
+	case Type of
+		spout ->
+			spout_worker:start_link(TopoId,Name,Index);
+		bolt ->
+			bolt_worker:start_link(TopoId,Name,Index)
+	end.

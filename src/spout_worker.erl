@@ -29,13 +29,14 @@ start_link(TopoId, Spout, Index) ->
 	gen_server:start_link({global,SpoutServerName}, spout_worker, [TopoId, Spout, Index], []),
 	startrun(TopoId,Spout,Index).
 
-startrun(TopoId,SpoutTypeName,SingleTypeSpoutIndex) ->
-	SpoutServerName = utils:genServerName(spout, TopoId, SpoutTypeName, SingleTypeSpoutIndex),
+startrun(TopoId,Spout,Index) ->
+	SpoutServerName = utils:genServerName(spout, TopoId, Spout, Index),
 	gen_server:cast({global,SpoutServerName}, startrun),
 	ok.
 
 execute(Module, SelfServerName)->
 	io:format("it is run~n"),
+	
 	SpoutTuple = Module:nextTuple(),
 	io:format("~p~n",[SpoutTuple]),
 	ToServerList = getToWorkerList(SelfServerName),
