@@ -4,7 +4,7 @@
 %%%
 %%% Created : 2012-10-24
 %%% -------------------------------------------------------------------
--module(spout_server).
+-module(spout_worker).
 
 -behaviour(gen_server).
 %% --------------------------------------------------------------------
@@ -26,7 +26,7 @@
 %% ====================================================================
 start_link(TopoId, Spout, Index) ->
 	SpoutServerName = utils:genServerName(spout, TopoId, Spout, Index),
-	gen_server:start_link({global,SpoutServerName}, spout_server, [TopoId, Spout, Index], []),
+	gen_server:start_link({global,SpoutServerName}, spout_worker, [TopoId, Spout, Index], []),
 	startrun(TopoId,Spout,Index).
 
 startrun(TopoId,SpoutTypeName,SingleTypeSpoutIndex) ->
@@ -101,8 +101,8 @@ handle_call(Request, From, State) ->
 handle_cast(startrun, State) ->
 	Module = State#server_state.module,
 	SelfServerName = State#server_state.self_name,
-	PID = spawn(spout_server,execute,[Module, SelfServerName]),
-    {noreply, State};
+	PID = spawn(spout_worker,execute,[Module, SelfServerName]),
+ {noreply, State};
 handle_cast(Msg, State) ->
     {noreply, State}.
 
