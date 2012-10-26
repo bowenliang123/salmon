@@ -6,16 +6,21 @@
 %%
 %% Include files
 %%
+-include("../include/tuple_interface.hrl").
 
 %%
 %% Exported Functions
 %%
--export([]).
+-export([nextTuple/0]).
 
 %%
 %% API Functions
 %%
-
+nextTuple() ->
+	timer:sleep(3000),
+	Message = "i am examplebolt!",
+	#tupleMessage{message = Message}.
+	
 
 
 %%

@@ -134,7 +134,7 @@ genServerName(Type,TopoId,SpoutTypeName,Index) ->
 getModule(Type, TopoId, Name) ->
 	Path = zkpath:genPath(TopoId, Type, Name),
 	SpoutTypeInfo = utils:zkget(Path),
-	io:format("~p~p~n", [Path,SpoutTypeInfo]),
+	io:format("TT:~p~p~p~n", [Type,Path,SpoutTypeInfo]),
 	Module = SpoutTypeInfo#type_info.module,
 	Module.
 

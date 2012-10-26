@@ -11,7 +11,7 @@
 %%
 %% Exported Functions
 %%
--export([start/0,listen_spouts/1,listen_bolts/0]).
+-export([start/0,listen_spouts/1,listen_bolts/1]).
 -export([hi/0]).
 
 
@@ -24,7 +24,8 @@ hi()->
 start() ->
 	application:start(ezk),
 	TopoId="topo1",
-	listen_spouts(TopoId),
+%% 	listen_spouts(TopoId),
+	listen_bolts(TopoId),
 %% 	spawn(test,listen_spouts,[]),
 %% 	spawn(test,listen_bolts,[]),
 	ok.
@@ -35,11 +36,15 @@ listen_spouts(TopoId) ->
 	io:format("~p~n", [SpoutsList]),
 	
 	travse(TopoId, spouts, SpoutsList),
- ok.
+	ok.
 
 
-listen_bolts()->
+listen_bolts(TopoId)->
+	SpoutsPath = zkpath:genPath(TopoId, bolts),
+	SpoutsList = utils:zkget(SpoutsPath),
+	io:format("~p~n", [SpoutsList]),
 	
+	travse(TopoId, bolts, SpoutsList),
 	ok.
 
 
@@ -51,13 +56,14 @@ listen_bolts()->
 travse(TopoId,Type, []) ->
 	ok;
 travse(TopoId, Type, [H|T] = SpoutNameList) ->
-	travseSingleSpout(TopoId, Type, H),
+	travse2(TopoId, Type, H),
 	travse(TopoId, Type, T).
 
 
-travseSingleSpout(TopoId, Type, SpoutName) ->
+travse2(TopoId, Type, SpoutName) ->
 	
 	SpoutPath = zkpath:genPath(TopoId, Type, SpoutName),
+	io:format("SP~p~n", [SpoutPath]),
 	SpoutInfo = utils:zkget(SpoutPath),
 	SpoutCount = SpoutInfo#type_info.count,
 	
@@ -74,10 +80,10 @@ checkWorker(TopoId, Type, SpoutName, Index) ->
    IsServerReady = checkWorkerReady(SingleSpoutInfo),
    if
 	   IsServerReady /= true ->
-	     setupWorker(TopoId, spout, SpoutName, Index);
+	     setupWorker(TopoId, Type, SpoutName, Index);
 	   true ->
 		   io:format("spoutSever has been already set!～n"),
-		   setupWorker(TopoId, spout, SpoutName, Index)
+		   setupWorker(TopoId, Type, SpoutName, Index)
    end,
 
    checkWorker(TopoId, Type, SpoutName, Index - 1).
@@ -97,5 +103,9 @@ setupWorker(TopoId, Type, Name, Index) ->
 		spout ->
 			spout_worker:start_link(TopoId,Name,Index);
 		bolt ->
+			bolt_worker:start_link(TopoId,Name,Index);
+		spouts ->
+			spout_worker:start_link(TopoId,Name,Index);
+		bolts ->
 			bolt_worker:start_link(TopoId,Name,Index)
 	end.
