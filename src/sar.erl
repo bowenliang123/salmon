@@ -29,8 +29,7 @@ start() ->
 %% 	spawn(test,listen_bolts,[]),
 	ok.
 
-listen_spouts(TopoId) ->
-	
+listen_spouts(TopoId) ->	
 	SpoutsPath = zkpath:genPath(TopoId, spouts),
 	SpoutsList = utils:zkget(SpoutsPath),
 	io:format("~p~n", [SpoutsList]),
