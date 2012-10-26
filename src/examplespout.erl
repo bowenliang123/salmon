@@ -17,7 +17,7 @@
 %% API Functions
 %%
 nextTuple() ->
-	timer:sleep(5000),
+	timer:sleep(3000),
 	Message = "i am examplespout!",
 	#tupleMessage{message = Message}.
 	
