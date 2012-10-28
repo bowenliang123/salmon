@@ -12,23 +12,33 @@
 %% Exported Functions
 %%
 -export([start/0,listen_spouts/1,listen_bolts/1]).
--export([hi/0]).
+-export([a/0,b/0]).
 
 
 %%
 %% API Functions
 %%
-hi()->
-	io:format("it is hi~n").
-
 start() ->
 	application:start(ezk),
 	TopoId="topo1",
 %% 	listen_spouts(TopoId),
 	listen_bolts(TopoId),
-%% 	spawn(test,listen_spouts,[]),
-%% 	spawn(test,listen_bolts,[]),
+%% 	spawn(sar,listen_spouts,[]),
+%% 	spawn(sar,listen_bolts,[]),
 	ok.
+
+a()->
+	TopoId="topo1",
+	application:start(ezk),
+	listen_spouts(TopoId),
+	ok.
+
+b()->
+	TopoId="topo1",
+	application:start(ezk),
+	listen_bolts(TopoId),
+	ok.
+
 
 listen_spouts(TopoId) ->
 	io:format("Listen_Spouts:~p~n", [TopoId]),

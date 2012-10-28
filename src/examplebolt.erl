@@ -11,15 +11,14 @@
 %%
 %% Exported Functions
 %%
--export([nextTuple/0]).
+-export([nextTuple/1]).
 
 %%
 %% API Functions
 %%
-nextTuple() ->
-	timer:sleep(3000),
-	Message = "i am examplebolt!",
-	#tupleMessage{message = Message}.
+nextTuple(#tupleMessage{message = Message } = Tuple) ->
+	NextTuple = lists:append([Message, "!!!"]),
+	#tupleMessage{message = NextTuple}.
 	
 
 

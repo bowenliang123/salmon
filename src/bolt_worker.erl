@@ -25,13 +25,13 @@
 %% External functions
 %% ====================================================================
 start_link(TopoId, Bolt, Index) ->
-	SpoutServerName = utils:genServerName(bolt, TopoId, Bolt, Index),
-	gen_server:start_link({global,SpoutServerName}, bolt_worker, [TopoId, Bolt, Index], []),
-	startrun(TopoId,Bolt,Index).
+	BoltServerName = utils:genServerName(bolt, TopoId, Bolt, Index),
+	gen_server:start_link({global,BoltServerName}, bolt_worker, [TopoId, Bolt, Index], []).
+%% 	startrun(TopoId,Bolt,Index).
 
 startrun(TopoId,Spout,Index) ->
-	SpoutServerName = utils:genServerName(bolt, TopoId, Spout, Index),
-	gen_server:cast({global,SpoutServerName}, startrun),
+	BoltServerName = utils:genServerName(bolt, TopoId, Spout, Index),
+	gen_server:cast({global,BoltServerName}, startrun),
 	ok.
 
 execute(Module, SelfServerName)->
@@ -55,19 +55,21 @@ execute(Module, SelfServerName)->
 %%          ignore               |
 %%          {stop, Reason}
 %% --------------------------------------------------------------------
-init([TopoId, SpoutName, Index]) ->
+init([TopoId, Name, Index]) ->
 	io:format("it is bolt_server init~n"),
-	SelfServerName = utils:genServerName(bolt, TopoId, SpoutName, Index),
-	SpoutModule = utils:getModule(bolt, TopoId, SpoutName),
+	SelfServerName = utils:genServerName(bolt, TopoId, Name, Index),
+	io:format("ServerName:~p~n", [SelfServerName]),
+	SpoutModule = utils:getModule(bolt, TopoId, Name),
 	io:format("Module:~p~n", [SpoutModule]),
 	
-	WorkerPath = zk:genPath(TopoId, bolt, SpoutName, Index),
+	WorkerPath = zk:genPath(TopoId, bolt, Name, Index),
 	zk:set(WorkerPath, #worker_info{self_name = SelfServerName, node_name = node()}),
 	
 	
 	OriginalState = #server_state{self_name = SelfServerName,
 								  topo_id = TopoId,
-								  type_name = SpoutName,
+								  type = bolt,
+								  type_name = Name,
 								  index = Index,
 								  module = SpoutModule},
 	io:format("OriginalState:~p~n", [OriginalState]),
@@ -84,6 +86,13 @@ init([TopoId, SpoutName, Index]) ->
 %%          {stop, Reason, Reply, State}   | (terminate/2 is called)
 %%          {stop, Reason, State}            (terminate/2 is called)
 %% --------------------------------------------------------------------
+handle_call({collect,Tuple}, From, State) ->
+	io:format("Collect:~p~n", [Tuple]),
+	{TopoId, Type, Name} = utils:getDataFromState(State),
+	Module = utils:getModule(Type, TopoId, Name),
+	NextTuple = Module:nextTuple(Tuple),
+	io:format("NEXTUPLE:~p~n", [NextTuple]),
+    {reply, State, State};
 handle_call(getServerState, From, State) ->
     {reply, State, State};
 handle_call(Request, From, State) ->

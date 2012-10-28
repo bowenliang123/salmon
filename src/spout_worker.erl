@@ -37,11 +37,11 @@ startrun(TopoId,Spout,Index) ->
 execute(Module, SelfServerName)->
 	io:format("it is run~n"),
 	
-	SpoutTuple = Module:nextTuple(),
-	io:format("~p~n",[SpoutTuple]),
+	NextTuple = Module:nextTuple(),
+	io:format("~p~n",[NextTuple]),
 	ToServerList = utils:getToWorkerList(SelfServerName),
 	io:format("~p~n",[ToServerList]),
-	emitTuples(SpoutTuple,ToServerList),
+	emitTuples(NextTuple,ToServerList),
 	execute(Module, SelfServerName).
 
 %% ====================================================================
@@ -138,7 +138,11 @@ code_change(OldVsn, State, Extra) ->
 %% --------------------------------------------------------------------
 %%% Internal functions
 %% --------------------------------------------------------------------
-
-emitTuples(SpoutTuple,ToServerList) ->
-	io:format("emitTuples"),
-	ok.
+emitTuples(Tuple,[]) ->
+	ok;
+emitTuples(Tuple, [H|T] = ToServerList) ->
+	ToServerName = H#worker_info.self_name,
+	io:format("emitTuples TO:~p~n",[ToServerName]),
+	gen_server:call({global,ToServerName}, {collect,Tuple}).
+%% 	spawn(gen_server,call,[{global,ToServerName},{collect,Tuple}]),
+%% 	ok.

@@ -81,7 +81,6 @@ genServerName(Type,TopoId,SpoutTypeName,Index) ->
 getModule(Type, TopoId, Name) ->
 	Path = zk:genPath(TopoId, Type, Name),
 	SpoutTypeInfo = zk:get(Path),
-	io:format("TT:~p~p~p~n", [Type,Path,SpoutTypeInfo]),
 	Module = SpoutTypeInfo#type_info.module,
 	Module.
 
@@ -90,15 +89,12 @@ getToWorkerList(SelfServerName) ->
 	State = gen_server:call({global,SelfServerName}, getServerState),
 	
 	{TopoId, Type, Name} = getDataFromState(State),
-	io:format("State:~p~p~p~p~n", [State,TopoId, Type, Name]),
 	ToList = zk:get(zk:genPath(TopoId, conns, Name)),
-	io:format("preToWL:~p~n", [ToList]),
 	case ToList of
 		{error,_} ->
 			[];
 		 _ ->
 			ToWokerList = action(TopoId,ToList),
-			io:format("ToWL:~p~n", [ToWokerList]),
 			ToWokerList
 	end.
 
@@ -146,7 +142,6 @@ action(TopoId, [], ResultList)->
 action(TopoId, [H|T] = ToList, ResultList)->
 	Path = zk:genPath(TopoId, bolts, H),	
 	Count = (zk:get(Path))#type_info.count,
-	io:format("H:~p~p~p~n", [H,Path,Count]),
 	Result = ba(Path,Count),
 	action(TopoId, T, lists:append([ResultList, Result])).
 	
