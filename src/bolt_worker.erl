@@ -138,12 +138,6 @@ code_change(OldVsn, State, Extra) ->
 %% --------------------------------------------------------------------
 
 
-
-
-
-	
-
-
 emitTuples(SpoutTuple,ToServerList) ->
 	io:format("emitTuples"),
 	ok.

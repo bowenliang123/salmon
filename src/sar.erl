@@ -30,21 +30,23 @@ start() ->
 %% 	spawn(test,listen_bolts,[]),
 	ok.
 
-listen_spouts(TopoId) ->	
+listen_spouts(TopoId) ->
+	io:format("Listen_Spouts:~p~n", [TopoId]),
 	SpoutsPath = zk:genPath(TopoId, spouts),
 	SpoutsList = zk:get(SpoutsPath),
-	io:format("~p~n", [SpoutsList]),
+	io:format("SpoutsList:~p~n", [SpoutsList]),
 	
 	travse(TopoId, spouts, SpoutsList),
 	ok.
 
 
 listen_bolts(TopoId)->
-	SpoutsPath = zk:genPath(TopoId, bolts),
-	SpoutsList = zk:get(SpoutsPath),
-	io:format("~p~n", [SpoutsList]),
+	io:format("Listen_Bolts:~p~n", [TopoId]),
+	BoltsPath = zk:genPath(TopoId, bolts),
+	BoltsList = zk:get(BoltsPath),
+	io:format("BoltsList:~p~n", [BoltsList]),
 	
-	travse(TopoId, bolts, SpoutsList),
+	travse(TopoId, bolts, BoltsList),
 	ok.
 
 
@@ -60,33 +62,33 @@ travse(TopoId, Type, [H|T] = SpoutNameList) ->
 	travse(TopoId, Type, T).
 
 
-travse2(TopoId, Type, SpoutName) ->
+travse2(TopoId, Type, Name) ->
 	
-	SpoutPath = zk:genPath(TopoId, Type, SpoutName),
+	SpoutPath = zk:genPath(TopoId, Type, Name),
 	io:format("SP~p~n", [SpoutPath]),
 	SpoutInfo = zk:get(SpoutPath),
 	SpoutCount = SpoutInfo#type_info.count,
 	
-	io:format("~p~p~p~n", [SpoutName,SpoutCount,SpoutPath]),
-	checkWorker(TopoId, Type, SpoutName, SpoutCount - 1),
+	io:format("~p~p~p~n", [Name,SpoutCount,SpoutPath]),
+	checkWorker(TopoId, Type, Name, SpoutCount - 1),
 	ok.
 
 
 checkWorker(_,_,_,-1) ->
 	ok;
-checkWorker(TopoId, Type, SpoutName, Index) ->
-   WorkerPath = zk:genPath(TopoId, Type, SpoutName, Index),
-   SingleSpoutInfo = zk:get(WorkerPath),
-   IsServerReady = checkWorkerReady(SingleSpoutInfo),
+checkWorker(TopoId, Type, Name, Index) ->
+   WorkerPath = zk:genPath(TopoId, Type, Name, Index),
+   WorkerInfo = zk:get(WorkerPath),
+   IsServerReady = checkWorkerReady(WorkerInfo),
    if
 	   IsServerReady /= true ->
-	     setupWorker(TopoId, Type, SpoutName, Index);
+	     setupWorker(TopoId, Type, Name, Index);
 	   true ->
 		   io:format("spoutSever has been already set!～n"),
-		   setupWorker(TopoId, Type, SpoutName, Index)
+		   setupWorker(TopoId, Type, Name, Index)
    end,
 
-   checkWorker(TopoId, Type, SpoutName, Index - 1).
+   checkWorker(TopoId, Type, Name, Index - 1).
 
 checkWorkerReady(WorkerInfo) ->
 	#worker_info{self_name = Server,node_name = Node} = WorkerInfo,
