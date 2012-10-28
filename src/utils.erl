@@ -93,9 +93,14 @@ getToWorkerList(SelfServerName) ->
 	io:format("State:~p~p~p~p~n", [State,TopoId, Type, Name]),
 	ToList = zk:get(zk:genPath(TopoId, conns, Name)),
 	io:format("preToWL:~p~n", [ToList]),
-	ToWokerList = action(TopoId,ToList),
-	io:format("ToWL:~p~n", [ToWokerList]),
-	ToWokerList.
+	case ToList of
+		{error,_} ->
+			[];
+		 _ ->
+			ToWokerList = action(TopoId,ToList),
+			io:format("ToWL:~p~n", [ToWokerList]),
+			ToWokerList
+	end.
 
 
 getDataFromState(State)->
