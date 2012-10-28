@@ -31,8 +31,8 @@ start() ->
 	ok.
 
 listen_spouts(TopoId) ->	
-	SpoutsPath = zkpath:genPath(TopoId, spouts),
-	SpoutsList = utils:zkget(SpoutsPath),
+	SpoutsPath = zk:genPath(TopoId, spouts),
+	SpoutsList = zk:get(SpoutsPath),
 	io:format("~p~n", [SpoutsList]),
 	
 	travse(TopoId, spouts, SpoutsList),
@@ -40,8 +40,8 @@ listen_spouts(TopoId) ->
 
 
 listen_bolts(TopoId)->
-	SpoutsPath = zkpath:genPath(TopoId, bolts),
-	SpoutsList = utils:zkget(SpoutsPath),
+	SpoutsPath = zk:genPath(TopoId, bolts),
+	SpoutsList = zk:get(SpoutsPath),
 	io:format("~p~n", [SpoutsList]),
 	
 	travse(TopoId, bolts, SpoutsList),
@@ -62,9 +62,9 @@ travse(TopoId, Type, [H|T] = SpoutNameList) ->
 
 travse2(TopoId, Type, SpoutName) ->
 	
-	SpoutPath = zkpath:genPath(TopoId, Type, SpoutName),
+	SpoutPath = zk:genPath(TopoId, Type, SpoutName),
 	io:format("SP~p~n", [SpoutPath]),
-	SpoutInfo = utils:zkget(SpoutPath),
+	SpoutInfo = zk:get(SpoutPath),
 	SpoutCount = SpoutInfo#type_info.count,
 	
 	io:format("~p~p~p~n", [SpoutName,SpoutCount,SpoutPath]),
@@ -75,8 +75,8 @@ travse2(TopoId, Type, SpoutName) ->
 checkWorker(_,_,_,-1) ->
 	ok;
 checkWorker(TopoId, Type, SpoutName, Index) ->
-   WorkerPath = zkpath:genPath(TopoId, Type, SpoutName, Index),
-   SingleSpoutInfo = utils:zkget(WorkerPath),
+   WorkerPath = zk:genPath(TopoId, Type, SpoutName, Index),
+   SingleSpoutInfo = zk:get(WorkerPath),
    IsServerReady = checkWorkerReady(SingleSpoutInfo),
    if
 	   IsServerReady /= true ->

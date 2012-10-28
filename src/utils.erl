@@ -14,42 +14,42 @@
 -export([]).
 -export([concatStrs/1]).
 -export([file_exist/1]).
--export([zkget/1, zkset/2, zkcreate/2, zkls/1, zkfs/2]).
 -export([genServerName/4]).
 -export([getModule/3]).
 -export([init/0]).
+-export([getToWorkerList/1, getDataFromState/1]).
 %%
 %% API Functions
 %%
 init()->
 	application:start(ezk),
 	TopoId = "topo1",
-	Path1 = zkpath:genPath(TopoId),
-	utils:zkfs(Path1, ""),
+	Path1 = zk:genPath(TopoId),
+	zk:fs(Path1, ""),
 	
-	Path2 = zkpath:genPath(TopoId,spouts),
-	utils:zkfs(Path2, ["Producer"]),
+	Path2 = zk:genPath(TopoId,spouts),
+	zk:fs(Path2, ["Producer"]),
 	
-	Path3 = zkpath:genPath(TopoId,bolts),
-	utils:zkfs(Path3, ["Consumer"]),
+	Path3 = zk:genPath(TopoId,bolts),
+	zk:fs(Path3, ["Consumer"]),
 	
-	Path99 = zkpath:genPath(TopoId,conns),
-	utils:zkfs(Path99, ["Producer"]),
+	Path99 = zk:genPath(TopoId,conns),
+	zk:fs(Path99, ["Producer"]),
 	
-	Path4 = zkpath:genPath(TopoId,spouts,"Producer"),
-	utils:zkfs(Path4, #type_info{module=examplespout,count=1}),
+	Path4 = zk:genPath(TopoId,spouts,"Producer"),
+	zk:fs(Path4, #type_info{module=examplespout,count=1}),
 	
-	Path5 = zkpath:genPath(TopoId,bolts,"Consumer"),
-	utils:zkfs(Path5, #type_info{module=examplebolt,count=1}),
+	Path5 = zk:genPath(TopoId,bolts,"Consumer"),
+	zk:fs(Path5, #type_info{module=examplebolt,count=1}),
 	
-	Path6 = zkpath:genPath(TopoId,spouts,"Producer",0),
-	utils:zkfs(Path6, #worker_info{}),
+	Path6 = zk:genPath(TopoId,spouts,"Producer",0),
+	zk:fs(Path6, #worker_info{}),
 	
-	Path7 = zkpath:genPath(TopoId,bolts,"Consumer",0),
-	utils:zkfs(Path7, #worker_info{}),
+	Path7 = zk:genPath(TopoId,bolts,"Consumer",0),
+	zk:fs(Path7, #worker_info{}),
 	
-	Path8 = zkpath:genPath(TopoId, conns, "Producer"),
-	utils:zkfs(Path8, ["Consumer"]),
+	Path8 = zk:genPath(TopoId, conns, "Producer"),
+	zk:fs(Path8, ["Consumer"]),
 	
 	ok.
 
@@ -64,60 +64,7 @@ file_exist(Filename) ->
         {error, Reason} -> io:format("~s is ~s~n", [Filename, Reason])
     end.
 
-zkget(Path) ->
-	{ok,Conn} = ezk:start_connection(),
-	Response = ezk:get(Conn,Path),
-	ezk:end_connection(Conn,""),
-	case Response of
-		{ok,{Content_bin,_}} ->
-			binary_to_term(Content_bin);
-		{_,_} ->
-			Response
-	end.
 
-zkset(Path, ContentTerm) ->
-	{ok,Conn} = ezk:start_connection(),
-	Response = ezk:set(Conn, Path, term_to_binary(ContentTerm)),
-	ezk:end_connection(Conn,""),
-	case Response of
-		{ok,_} -> 
-			{ok,set_successfully};
-		{_,_} ->
-			Response
-	end.
-
-zkcreate(Path, ContentTerm) ->
-	{ok,Conn} = ezk:start_connection(),
-	Response = ezk:create(Conn, Path, term_to_binary(ContentTerm)),
-	ezk:end_connection(Conn,""),
-	case Response of
-		{ok,_} -> 
-			{ok,set_successfully};
-		{_,_} ->
-			Response
-	end.
-
-zkfs(Path, ContentTerm) ->
-	{ok,Conn} = ezk:start_connection(),
-	Response = ezk:set(Conn, Path, term_to_binary(ContentTerm)),
-	ezk:end_connection(Conn,""),
-	case Response of
-		{ok,_} -> 
-			{ok,set_successfully};
-		{_,_} ->
-			zkcreate(Path, term_to_binary(ContentTerm))
-	end.
-
-zkls(Path) ->
-	{ok,Conn} = ezk:start_connection(),
-	Response = ezk:ls(Conn,Path),
-	ezk:end_connection(Conn,""),
-	case Response of
-		{ok,ContentList_bin}->
-			list_b2t(ContentList_bin);
-		{_,_} ->
-			Response
-	end.
 
 
 genServerName(Type,TopoId,SpoutTypeName,Index) ->
@@ -132,11 +79,30 @@ genServerName(Type,TopoId,SpoutTypeName,Index) ->
 
 
 getModule(Type, TopoId, Name) ->
-	Path = zkpath:genPath(TopoId, Type, Name),
-	SpoutTypeInfo = utils:zkget(Path),
+	Path = zk:genPath(TopoId, Type, Name),
+	SpoutTypeInfo = zk:get(Path),
 	io:format("TT:~p~p~p~n", [Type,Path,SpoutTypeInfo]),
 	Module = SpoutTypeInfo#type_info.module,
 	Module.
+
+
+getToWorkerList(SelfServerName) ->
+	State = gen_server:call({global,SelfServerName}, getServerState),
+	
+	{TopoId, Type, Name} = getDataFromState(State),
+	io:format("State:~p~p~p~p~n", [State,TopoId, Type, Name]),
+	ToList = zk:get(zk:genPath(TopoId, conns, Name)),
+	io:format("preToWL:~p~n", [ToList]),
+	ToWokerList = action(TopoId,ToList),
+	io:format("ToWL:~p~n", [ToWokerList]),
+	ToWokerList.
+
+
+getDataFromState(State)->
+	TopoId = State#server_state.topo_id,
+	Type = State#server_state.type,
+	Name = State#server_state.type_name,
+	{TopoId, Type, Name}.
 
 %%
 %% Local Functions
@@ -155,11 +121,27 @@ concatStrs([H|T], ResultStr) ->
 	end.
 
 
-list_b2t([H|T])->
-	list_b2t(T,[binary_to_list(H)]).
-list_b2t([], ResultList)->
-	ResultList;
-list_b2t([H|T], ResultList) ->
-	list_b2t(T, lists:append([ResultList,[binary_to_list(H)]])).
+ba(Path,Count)->
+	ba(Path,Count-1,[]).
+ba(Path,-1,Result)->
+	Result;
 
+ba(Path,Index,Result)->	
+	Path2 = utils:concatStrs([Path,"/",Index]),
+	WorkerInfo = zk:get(Path2),
+	ba(Path,Index-1,lists:append([Result,[WorkerInfo]])).	
+
+
+
+action(TopoId, ToList)->
+	action(TopoId, ToList, []).
+
+action(TopoId, [], ResultList)->
+	ResultList;
+action(TopoId, [H|T] = ToList, ResultList)->
+	Path = zk:genPath(TopoId, bolts, H),	
+	Count = (zk:get(Path))#type_info.count,
+	io:format("H:~p~p~p~n", [H,Path,Count]),
+	Result = ba(Path,Count),
+	action(TopoId, T, lists:append([ResultList, Result])).
 	

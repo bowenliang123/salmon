@@ -24,10 +24,10 @@
 %% ====================================================================
 %% External functions
 %% ====================================================================
-start_link(TopoId, Spout, Index) ->
-	SpoutServerName = utils:genServerName(bolt, TopoId, Spout, Index),
-	gen_server:start_link({global,SpoutServerName}, bolt_worker, [TopoId, Spout, Index], []),
-	startrun(TopoId,Spout,Index).
+start_link(TopoId, Bolt, Index) ->
+	SpoutServerName = utils:genServerName(bolt, TopoId, Bolt, Index),
+	gen_server:start_link({global,SpoutServerName}, bolt_worker, [TopoId, Bolt, Index], []),
+	startrun(TopoId,Bolt,Index).
 
 startrun(TopoId,Spout,Index) ->
 	SpoutServerName = utils:genServerName(bolt, TopoId, Spout, Index),
@@ -39,7 +39,7 @@ execute(Module, SelfServerName)->
 	
 	SpoutTuple = Module:nextTuple(),
 	io:format("~p~n",[SpoutTuple]),
-	ToServerList = getToWorkerList(SelfServerName),
+	ToServerList = utils:getToWorkerList(SelfServerName),
 	emitTuples(SpoutTuple,ToServerList),
 	execute(Module, SelfServerName).
 
@@ -61,8 +61,8 @@ init([TopoId, SpoutName, Index]) ->
 	SpoutModule = utils:getModule(bolt, TopoId, SpoutName),
 	io:format("Module:~p~n", [SpoutModule]),
 	
-	WorkerPath = zkpath:genPath(TopoId, bolt, SpoutName, Index),
-	utils:zkset(WorkerPath, #worker_info{self_name = SelfServerName, node_name = node()}),
+	WorkerPath = zk:genPath(TopoId, bolt, SpoutName, Index),
+	zk:set(WorkerPath, #worker_info{self_name = SelfServerName, node_name = node()}),
 	
 	
 	OriginalState = #server_state{self_name = SelfServerName,
@@ -102,8 +102,8 @@ handle_call(Request, From, State) ->
 handle_cast(startrun, State) ->
 	Module = State#server_state.module,
 	SelfServerName = State#server_state.self_name,
-	PID = spawn(spout_worker,execute,[Module, SelfServerName]),
- {noreply, State};
+	PID = spawn(bolt_worker,execute,[Module, SelfServerName]),
+	{noreply, State};
 handle_cast(Msg, State) ->
     {noreply, State}.
 
@@ -136,41 +136,13 @@ code_change(OldVsn, State, Extra) ->
 %% --------------------------------------------------------------------
 %%% Internal functions
 %% --------------------------------------------------------------------
-getToWorkerList(SelfServerName) ->
-	State = gen_server:call({global,SelfServerName}, getServerState),
-	{TopoId, Type, Name} = getDataFromState(State),
-	ToList = utils:zkget(zkpath:genPath(TopoId, conns, Name)),
-	ToWokerList = action(TopoId,ToList),
-	io:format("ToWL:~p~n", [ToWokerList]),
-	ToWokerList.
 
-ba(Path,-1,Result)->
-	Result;
-ba(Path,Index,Result)->	
-	Path2 = utils:concatStrs([Path,"/",Index]),
-	WorkerInfo = utils:zkget(Path2),
-	ba(Path,Index-1,lists:append([Result,[WorkerInfo]])).	
-ba(Path,Count)->
-	ba(Path,Count-1,[]).
+
+
+
+
 	
 
-action(TopoId, [], ResultList)->
-	ResultList;
-action(TopoId, [H|T] = ToList, ResultList)->
-	Path = zkpath:genPath(TopoId, bolts, H),	
-	Count = (utils:zkget(Path))#type_info.count,
-	io:format("H:~p~p~p~n", [H,Path,Count]),
-	Result = ba(Path,Count),
-	action(TopoId, T, lists:append([ResultList, Result])).
-action(TopoId, ToList)->
-	action(TopoId, ToList, []).
-	
-
-getDataFromState(State)->
-	TopoId = State#server_state.topo_id,
-	Type = State#server_state.type,
-	Name = State#server_state.type_name,
-	{TopoId, Type, Name}.
 
 emitTuples(SpoutTuple,ToServerList) ->
 	io:format("emitTuples"),
