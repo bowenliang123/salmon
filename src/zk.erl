@@ -14,10 +14,29 @@
 -export([get/1, set/2, create/2, ls/1, fs/2]).
 -export([genPath/1, genPath/2, genPath/3, genPath/4]).
 
+-export([ifEzkLaunched/0]).
+
 %%
 %% API Functions
 %%
+
+%% Check if an application already launched
+ifEzkLaunched() ->
+	RunningApplicationsList = application:which_applications(),
+	ifAppLaunched(ezk,RunningApplicationsList).
+
+%% Start Ezk if not started yet
+startEzk() ->
+	IfEzkLaunched = ifEzkLaunched(),
+	case IfEzkLaunched of 
+		   false->
+				application:start(ezk);
+		   true ->
+				ok
+	end.
+
 get(Path) ->
+	startEzk(),
 	{ok,Conn} = ezk:start_connection(),
 	Response = ezk:get(Conn,Path),
 	ezk:end_connection(Conn,""),
@@ -29,6 +48,7 @@ get(Path) ->
 	end.
 
 set(Path, ContentTerm) ->
+	startEzk(),
 	{ok,Conn} = ezk:start_connection(),
 	Response = ezk:set(Conn, Path, term_to_binary(ContentTerm)),
 	ezk:end_connection(Conn,""),
@@ -40,6 +60,7 @@ set(Path, ContentTerm) ->
 	end.
 
 create(Path, ContentTerm) ->
+	startEzk(),
 	{ok,Conn} = ezk:start_connection(),
 	Response = ezk:create(Conn, Path, term_to_binary(ContentTerm)),
 	ezk:end_connection(Conn,""),
@@ -51,6 +72,7 @@ create(Path, ContentTerm) ->
 	end.
 
 fs(Path, ContentTerm) ->
+	startEzk(),
 	{ok,Conn} = ezk:start_connection(),
 	Response = ezk:set(Conn, Path, term_to_binary(ContentTerm)),
 	ezk:end_connection(Conn,""),
@@ -62,6 +84,7 @@ fs(Path, ContentTerm) ->
 	end.
 
 ls(Path) ->
+	startEzk(),
 	{ok,Conn} = ezk:start_connection(),
 	Response = ezk:ls(Conn,Path),
 	ezk:end_connection(Conn,""),
@@ -74,7 +97,7 @@ ls(Path) ->
 
 
 
-
+%% Generate Path to Znode
 genPath(TopoId)->
 	RootPath = "/topos",
 	utils:concatStrs([RootPath,"/",TopoId]).
@@ -112,6 +135,19 @@ genPath(TopoId, Type, Name, Index) ->
 %% Local Functions
 %%
 
+%% Check if an application already launched
+ifAppLaunched(AppName, []) ->
+	false;
+ifAppLaunched(AppName, [H|T] = AppList) ->
+	io:format("~p~p~n",[AppName,AppList]),
+	case H of
+		{AppName, _, _} ->
+			true;
+		true ->
+			ifAppLaunched(AppName, T)			
+	end.
+	
+%% Transfer a List from binary item to list item
 list_b2t([H|T])->
 	list_b2t(T,[binary_to_list(H)]).
 list_b2t([], ResultList)->
