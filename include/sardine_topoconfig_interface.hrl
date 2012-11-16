@@ -1,3 +1,8 @@
+-record(clusterConfig,{
+		   zkip,
+		   port
+	   }).
+
 -record(topoConfig,
 		{
 			id,
