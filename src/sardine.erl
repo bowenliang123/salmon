@@ -13,6 +13,9 @@
 %%
 -export([]).
 
+-export([cluster/2]).
+
+
 -export([newTopo/0]).
 
 -export([newSpout/2, newSpout/3]).
@@ -23,15 +26,22 @@
 
 -export([shuffleGrouping/3]).
 
+-export([submitTopology/2]).
+
 
 %%
 %% API Functions
 %%
 
+%% Cluster
+cluster(ZkIp, Port)->
+	#clusterConfig{zkip = ZkIp, port = Port}.
+
+%% Topology
 newTopo()->
 	sardine_topoBuilder:newTopo().
-
 %% Spout
+%% Add Spout
 newSpout(Id, Module) ->
 	sardine_spout:newSpout(Id, Module, 1).
 
@@ -46,6 +56,7 @@ setSpout(Topo, Id, Module, Parallelism_hint) when is_record(Topo, topoConfig)->
 	sardine_topoBuilder:setSpout(Topo, Id, Module, Parallelism_hint).
 
 %% Bolt
+%% Add Bolt
 newBolt(Id, Module) ->
 	sardine_bolt:newBolt(Id, Module, 1).
 
@@ -60,9 +71,14 @@ setBolt(Topo, Id, Module, Parallelism_hint) when is_record(Topo, topoConfig), is
 	sardine_topoBuilder:setBolt(Topo, Id, Module, Parallelism_hint).
 
 %% Connection
+%% Add Grouping
 shuffleGrouping(Topo, FromActorId, ToActorId) when is_record(Topo, topoConfig) ->
 	sardine_grouping:shuffleGrouping(Topo, FromActorId, ToActorId).
-	
+
+%% Submit
+%% Check and Submit Topoloy Config to Zookeeper
+submitTopology(Cluster, Topo) ->
+	sardine_submitter:submitTopology(Cluster, Topo).
 
 %%
 %% Local Functions
