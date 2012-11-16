@@ -10,18 +10,25 @@
 %%
 %% Exported Functions
 %%
--export([start/0]).
+-export([start/0,ex/0]).
 
 %%
 %% API Functions
 %%
+ex()->
+	Dict1 = dict:new(),
+	Dict2 = dict:append("key", "Value", Dict1),
+	dict:is_key("key", Dict2).
 
 start()->
 	Topo = sardine:newTopo(),
 	Topo1 = sardine:setSpout(Topo, "a", "b"),
 	Topo2 = sardine:setSpout(Topo1, "c", "d",3),
 	Topo3 = sardine:setBolt(Topo2, "e", "f",4),
-	Topo4 = sardine:shuffleGrouping(Topo3, "c", "e").
+	Topo4 = sardine:shuffleGrouping(Topo3, "c", "e"),
+	io:format("~p~n", [Topo4]),
+	Cluster = sardine:cluster("127.0.0.1", 2181),
+	FeedBack = sardine:submitTopology(Cluster, Topo4).
 	
 
 %%
