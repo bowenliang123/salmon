@@ -6,7 +6,7 @@
 %%
 %% Include files
 %%
--include("../include/sardine_topoconfig_interface.hrl").
+-include("../include/sardine_config_interface.hrl").
 
 %%
 %% Exported Functions

@@ -6,7 +6,7 @@
 %%
 %% Include files
 %%
--include("../include/sardine_topoconfig_interface.hrl").
+-include("../include/sardine_config_interface.hrl").
 
 %%
 %% Exported Functions
@@ -18,12 +18,27 @@
 %% API Functions
 %%
 shuffleGrouping(Topo, FromActorId, ToActorId) when is_record(Topo, topoConfig) ->
-	Conn = #connConfig{from = FromActorId, to = ToActorId, grouping = shuffleGrouping},
-	OriginalConns = Topo#topoConfig.conns,
-	Topo1 = Topo#topoConfig{conns = [Conn|OriginalConns]}.
+	IsActorIdValid = isActorIdValid({FromActorId, ToActorId}),	
+	if 
+		IsActorIdValid == false ->
+			Topo;
+		true->
+			Conn = #connConfig{from = FromActorId, to = ToActorId, grouping = shuffleGrouping},
+			OriginalConns = Topo#topoConfig.conns,
+			Topo1 = Topo#topoConfig{conns = [Conn|OriginalConns]}
+	end.
+	
 
 
 %%
 %% Local Functions
 %%
+isActorIdValid({FromActorId, ToActorId})->
+	if
+		FromActorId==[]; ToActorId==[]->
+			false;
+		true->
+			true
+	end.
+	
 
