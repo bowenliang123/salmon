@@ -26,9 +26,10 @@ start()->
 	Topo2 = sardine:setSpout(Topo1, "c", "d",3),
 	Topo3 = sardine:setBolt(Topo2, "e", "f",4),
 	Topo4 = sardine:shuffleGrouping(Topo3, "c", "e"),
-	io:format("~p~n", [Topo4]),
+	Topo5 = sardine:shuffleGrouping(Topo4, "", "f"),
+	io:format("~p~n", [Topo5]),
 	Cluster = sardine:cluster("127.0.0.1", 2181),
-	FeedBack = sardine:submitTopology(Cluster, Topo4).
+	FeedBack = sardine:submitTopology(Cluster, Topo5).
 	
 
 %%
