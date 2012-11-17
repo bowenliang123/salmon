@@ -26,7 +26,33 @@ submitTopology(Cluster, Topo) when is_record(Topo, topoConfig) ->
 %%
 parseConns(Topo) when is_record(Topo, topoConfig) ->
 	#topoConfig{spouts = SpoutsConfigs, bolts = BoltsConfigs, conns = ConnsConfigs} = Topo,
-	ConnsConfigs1 = valiadConns(ConnsConfigs).
+%% 	ConnsConfigs1 = valiadConns(ConnsConfigs).
+	getBoltsIdList(BoltsConfigs).
 
 valiadConns(ConnsConfigs) when is_list(ConnsConfigs) ->
-	ok.
+	ConnPairsList = getConnPairsList(ConnsConfigs).
+
+getSpoutsIdList(SpoutsConfigs) ->
+	getSpoutsIdList(SpoutsConfigs,[]).
+getSpoutsIdList([],ResultList) ->
+	ResultList;
+getSpoutsIdList([H|T] = SpoutsConfigs, ResultList) when is_record(H, spoutConfig) ->
+	getSpoutsIdList(T, [{{H#spoutConfig.id}}|ResultList]).
+
+getBoltsIdList(BoltsConfigs) ->
+	getBoltsIdList(BoltsConfigs,[]).
+getBoltsIdList([], ResultList) ->
+	ResultList;
+getBoltsIdList([H|T] = BoltsConfigs, ResultList) when is_record(H, boltConfig) ->
+	getBoltsIdList(T, [{H#boltConfig.id}|ResultList]).
+
+
+getConnPairsList(ConnsConfigs) ->
+	genConnPairsList(ConnsConfigs,[]).
+genConnPairsList([],ResultList)->
+	ResultList;
+genConnPairsList([H|T] = ConnsConfigs, ResultList) when is_record(H, connConfig)->
+	#connConfig{from = From, to = To} = H,
+	genConnPairsList(T, [{From, To}|ResultList]).
+
+
