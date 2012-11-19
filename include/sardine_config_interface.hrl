@@ -14,18 +14,18 @@
 -record(spoutConfig,
 		{
 			id,
+			count = 1,
 			module,
-			to=[],
-			count
+			to=[]
   		}).
 
 -record(boltConfig,
 		{
 			id,
 			module,
+			count = 1,
 			from = [],
-			to = [],
-			count = 1
+			to = []
 		}).
 
 -record(connConfig,
