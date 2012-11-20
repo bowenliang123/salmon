@@ -28,6 +28,8 @@
 
 -export([submitTopology/2]).
 
+-export([publishTopology/2]).
+
 
 %%
 %% API Functions
@@ -77,9 +79,13 @@ shuffleGrouping(Topo, FromActorId, ToActorId) when is_record(Topo, topoConfig) -
 
 %% Submit
 %% Check and Submit Topoloy Config to Zookeeper
-submitTopology(Cluster, Topo) ->
+submitTopology(Cluster, Topo)
+  when is_record(Cluster, clusterConfig) and is_record(Topo, topoConfig) ->
 	sardine_submitter:submitTopology(Cluster, Topo).
 
+publishTopology(Cluster, Topo)
+  when is_record(Cluster, clusterConfig) and is_record(Topo, topoConfig) ->
+	sardine_publisher:publishTopology(Cluster, Topo).
 %%
 %% Local Functions
 %%
