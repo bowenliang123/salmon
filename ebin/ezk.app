@@ -4,7 +4,7 @@
               {registered,[]},
               {applications,[kernel,stdlib]},
               {mod,{ezk_app,[]}},
-              {env,[{default_servers,[{"192.168.22.133",2181,30000,10000}]}]},
+              {env,[{default_servers,[{"192.168.204.128",2181,30000,10000}]}]},
               {modules,[ezk,ezk_app,ezk_connection,ezk_connection_manager,
                         ezk_highlander,ezk_log,ezk_message_2_packet,
                         ezk_packet_2_message,ezk_sup]}]}.
