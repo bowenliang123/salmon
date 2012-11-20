@@ -35,7 +35,7 @@ setSpout(Topo, Id, Module) when is_record(Topo, topoConfig) ->
 
 setSpout(Topo, Id, Module, Parallelism_hint) when is_record(Topo, topoConfig), is_number(Parallelism_hint) ->
 	NewSpoutConfig = sardine_spout:newSpout(Id, Module, Parallelism_hint),
-	Topo1 = sardine_topoBuilder:setSpout(Topo, NewSpoutConfig).
+	_Topo1 = sardine_topoBuilder:setSpout(Topo, NewSpoutConfig).
 
 %% adding Bolt
 setBolt(Topo, BoltConfig) when is_record(Topo, topoConfig) ->
@@ -48,7 +48,7 @@ setBolt(Topo, Id, Module) when is_record(Topo, topoConfig) ->
 
 setBolt(Topo, Id, Module, Parallelism_hint) when is_record(Topo, topoConfig), is_number(Parallelism_hint) ->
 	NewBoltConfig = sardine_bolt:newBolt(Id, Module, Parallelism_hint),
-	Topo1 = sardine_topoBuilder:setBolt(Topo, NewBoltConfig).
+	_Topo1 = sardine_topoBuilder:setBolt(Topo, NewBoltConfig).
 
 %%
 %% Local Functions

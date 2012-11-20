@@ -16,13 +16,13 @@
 %%
 %% API Functions
 %%
-isInList(Term, [H|T]=A) ->
+isInList(Term, [H|T] = _TargetList) ->
 	if Term == H->
 		   true;
 	   true->
 		   isInList(Term, T)
 	end;
-isInList(Term, [])->
+isInList(_, [])->
 	false.
 
 %%

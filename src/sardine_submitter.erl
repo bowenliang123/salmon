@@ -17,8 +17,8 @@
 %%
 %% API Functions
 %%
-submitTopology(Cluster, Topo) when is_record(Topo, topoConfig) ->
-	Topo1 = parseConns(Topo).
+submitTopology(_Cluster, Topo) when is_record(Topo, topoConfig) ->
+	_Topo1 = parseConns(Topo).
 
 
 %%
@@ -29,7 +29,7 @@ parseConns(Topo) when is_record(Topo, topoConfig) ->
 	VerifiedConnPairsList = verifyConns(ConnsConfigs, SpoutsConfigs, BoltsConfigs),
 	{SpoutsConfigs1,BoltsConfigs1} = putConnPairs(VerifiedConnPairsList,SpoutsConfigs,BoltsConfigs),
 %% 	io:format("SS~p~nBB~p~n", [SpoutsConfigs1,BoltsConfigs1]),
-	Topo1 = Topo#topoConfig{spouts = SpoutsConfigs1, bolts = BoltsConfigs1}.
+	_Topo1 = Topo#topoConfig{spouts = SpoutsConfigs1, bolts = BoltsConfigs1}.
 
 
 verifyConns(ConnsConfigs, SpoutsConfigs, BoltsConfigs) when is_list(ConnsConfigs) ->
@@ -39,7 +39,7 @@ verifyConns(ConnsConfigs, SpoutsConfigs, BoltsConfigs) when is_list(ConnsConfigs
 
 
 
-verifyEachConnPair([H|T] = ConnsConfigs, SpoutsIdList, BoltsIdList, ResultConnsConfigsList)
+verifyEachConnPair([H|T] = _ConnsConfigs, SpoutsIdList, BoltsIdList, ResultConnsConfigsList)
   when is_record(H, connConfig)->
 	#connConfig{from = From, to = To} = H,
 	if
@@ -57,39 +57,35 @@ verifyEachConnPair([H|T] = ConnsConfigs, SpoutsIdList, BoltsIdList, ResultConnsC
    end;
 verifyEachConnPair([], _, _, ResultConnsConfigsList)->
 	ResultConnsConfigsList.
-
-verifyConnPair({From, To}, SpoutsIdList, BoltsIdList) ->
-	ok.
 	
 
 getSpoutsIdList(SpoutsConfigs) ->
 	getSpoutsIdList(SpoutsConfigs,[]).
 
-getSpoutsIdList([H|T] = SpoutsConfigs, ResultList) when is_record(H, spoutConfig) ->
+getSpoutsIdList([H|T] = _SpoutsConfigs, ResultList) when is_record(H, spoutConfig) ->
 	getSpoutsIdList(T, [H#spoutConfig.id|ResultList]);
-getSpoutsIdList([],ResultList) ->
+getSpoutsIdList([], ResultList) ->
 	ResultList.
 
 getBoltsIdList(BoltsConfigs) ->
 	getBoltsIdList(BoltsConfigs,[]).
-getBoltsIdList([H|T] = BoltsConfigs, ResultList) when is_record(H, boltConfig) ->
+getBoltsIdList([H|T] = _BoltsConfigs, ResultList) when is_record(H, boltConfig) ->
 	getBoltsIdList(T, [H#boltConfig.id|ResultList]);
 getBoltsIdList([], ResultList) ->
 	ResultList.
 
 
-getConnPairsList(ConnsConfigs) ->
-	genConnPairsList(ConnsConfigs,[]).
-genConnPairsList([H|T] = ConnsConfigs, ResultList)
-  when is_record(H, connConfig)->
-	genConnPairsList(T, [{H#connConfig.from, H#connConfig.to}|ResultList]);
-genConnPairsList([],ResultList)->
-	ResultList.
+%% getConnPairsList(ConnsConfigs) ->
+%% 	genConnPairsList(ConnsConfigs,[]).
+%% genConnPairsList([H|T] = ConnsConfigs, ResultList)
+%%   when is_record(H, connConfig)->
+%% 	genConnPairsList(T, [{H#connConfig.from, H#connConfig.to}|ResultList]);
+%% genConnPairsList([],ResultList)->
+%% 	ResultList.
 
 putConnPairs(VerifiedConnPairsList, SpoutsConfigs, BoltsConfigs) ->
 	SpoutsConfigs1 = putConnPairsToSpouts(VerifiedConnPairsList, SpoutsConfigs),
 	BoltsConfigs1 = putConnPairsToBolts(VerifiedConnPairsList, BoltsConfigs),
-%% 	io:format("SS~p~nBB~p~n", [SpoutsConfigs1,BoltsConfigs1]),
 	{SpoutsConfigs1, BoltsConfigs1}.
 
 %% 将Conn连接信息写入Spouts的From和To字段
@@ -98,14 +94,14 @@ putConnPairsToSpouts(VerifiedConnCongfigsList, SpoutsConfigs) ->
 
 putConnCongfigsToSpouts(_, [], ResultList) ->
 	ResultList;
-putConnCongfigsToSpouts(ConnConfigs,[H|T] = SpoutsConfigs, ResultList)
+putConnCongfigsToSpouts(ConnConfigs,[H|T] = _SpoutsConfigs, ResultList)
   when is_record(H, spoutConfig)->	
 	H1 = putConnsToSpout(ConnConfigs, H),
 	io:format("RR~p~nTT~p~nH1~p~n", [ResultList,T,H1]),
 	putConnCongfigsToSpouts(ConnConfigs, T, [H1|ResultList]).
 
 
-putConnsToSpout([H|T] = ConnConfigs, SpoutConfig)
+putConnsToSpout([H|T] = _ConnConfigs, SpoutConfig)
   when is_record(SpoutConfig, spoutConfig) ->
 	SpoutConfig1 = putSingleConnToSpout(H, SpoutConfig),
 	putConnsToSpout(T, SpoutConfig1);
@@ -129,14 +125,14 @@ putConnPairsToBolts(VerifiedConnCongfigsList, BoltsConfigs) ->
 
 putConnCongfigsToBolts(_, [], ResultList) ->
 	ResultList;
-putConnCongfigsToBolts(ConnConfigs,[H|T] = BoltsConfigs, ResultList)
+putConnCongfigsToBolts(ConnConfigs,[H|T] = _BoltsConfigs, ResultList)
   when is_record(H, boltConfig)->	
 	H1 = putConnsToBolt(ConnConfigs, H),
 	io:format("RR~p~nTT~p~nH1~p~n", [ResultList,T,H1]),
 	putConnCongfigsToBolts(ConnConfigs, T, [H1|ResultList]).
 
 
-putConnsToBolt([H|T] = ConnConfigs, BoltConfig)
+putConnsToBolt([H|T] = _ConnConfigs, BoltConfig)
   when is_record(BoltConfig, boltConfig) ->
 	BoltConfig1 = putSingleConnToBolt(H, BoltConfig),
 	putConnsToBolt(T, BoltConfig1);

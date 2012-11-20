@@ -25,7 +25,7 @@ shuffleGrouping(Topo, FromActorId, ToActorId) when is_record(Topo, topoConfig) -
 		true->
 			Conn = #connConfig{from = FromActorId, to = ToActorId, grouping = shuffleGrouping},
 			OriginalConns = Topo#topoConfig.conns,
-			Topo1 = Topo#topoConfig{conns = [Conn|OriginalConns]}
+			_Topo1 = Topo#topoConfig{conns = [Conn|OriginalConns]}
 	end.
 	
 
