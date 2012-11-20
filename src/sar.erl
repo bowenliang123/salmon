@@ -42,8 +42,8 @@ b()->
 
 listen_spouts(TopoId) ->
 	io:format("Listen_Spouts:~p~n", [TopoId]),
-	SpoutsPath = zk:genPath(TopoId, spouts),
-	SpoutsList = zk:get(SpoutsPath),
+	SpoutsPath = sardine_zk:genPath(TopoId, spouts),
+	SpoutsList = sardine_zk:get(SpoutsPath),
 	io:format("SpoutsList:~p~n", [SpoutsList]),
 	
 	travse(TopoId, spouts, SpoutsList),
@@ -52,8 +52,8 @@ listen_spouts(TopoId) ->
 
 listen_bolts(TopoId)->
 	io:format("Listen_Bolts:~p~n", [TopoId]),
-	BoltsPath = zk:genPath(TopoId, bolts),
-	BoltsList = zk:get(BoltsPath),
+	BoltsPath = sardine_zk:genPath(TopoId, bolts),
+	BoltsList = sardine_zk:get(BoltsPath),
 	io:format("BoltsList:~p~n", [BoltsList]),
 	
 	travse(TopoId, bolts, BoltsList),
@@ -74,9 +74,9 @@ travse(TopoId, Type, [H|T] = SpoutNameList) ->
 
 travse2(TopoId, Type, Name) ->
 	
-	SpoutPath = zk:genPath(TopoId, Type, Name),
+	SpoutPath = sardine_zk:genPath(TopoId, Type, Name),
 	io:format("SP~p~n", [SpoutPath]),
-	SpoutInfo = zk:get(SpoutPath),
+	SpoutInfo = sardine_zk:get(SpoutPath),
 	SpoutCount = SpoutInfo#type_info.count,
 	
 	io:format("~p~p~p~n", [Name,SpoutCount,SpoutPath]),
@@ -87,8 +87,8 @@ travse2(TopoId, Type, Name) ->
 checkWorker(_,_,_,-1) ->
 	ok;
 checkWorker(TopoId, Type, Name, Index) ->
-   WorkerPath = zk:genPath(TopoId, Type, Name, Index),
-   WorkerInfo = zk:get(WorkerPath),
+   WorkerPath = sardine_zk:genPath(TopoId, Type, Name, Index),
+   WorkerInfo = sardine_zk:get(WorkerPath),
    IsServerReady = checkWorkerReady(WorkerInfo),
    if
 	   IsServerReady /= true ->
