@@ -25,12 +25,12 @@
 %% External functions
 %% ====================================================================
 start_link(TopoId, Spout, Index) ->
-	SpoutServerName = utils:genServerName(spout, TopoId, Spout, Index),
+	SpoutServerName = sardine_utils:genServerName(spout, TopoId, Spout, Index),
 	gen_server:start_link({global,SpoutServerName}, spout_worker, [TopoId, Spout, Index], []),
 	startrun(TopoId,Spout,Index).
 
 startrun(TopoId,Spout,Index) ->
-	SpoutServerName = utils:genServerName(spout, TopoId, Spout, Index),
+	SpoutServerName = sardine_utils:genServerName(spout, TopoId, Spout, Index),
 	gen_server:cast({global,SpoutServerName}, startrun),
 	ok.
 
@@ -39,7 +39,7 @@ execute(Module, SelfServerName)->
 	
 	NextTuple = Module:nextTuple(),
 	io:format("~p~n",[NextTuple]),
-	ToServerList = utils:getToWorkerList(SelfServerName),
+	ToServerList = sardine_utils:getToWorkerList(SelfServerName),
 	io:format("~p~n",[ToServerList]),
 	emitTuples(NextTuple,ToServerList),
 	execute(Module, SelfServerName).
@@ -58,12 +58,12 @@ execute(Module, SelfServerName)->
 %% --------------------------------------------------------------------
 init([TopoId, SpoutName, Index]) ->
 	io:format("it is init~n"),
-	SelfServerName = utils:genServerName(spout, TopoId, SpoutName, Index),
-	SpoutModule = utils:getModule(spout, TopoId, SpoutName),
+	SelfServerName = sardine_utils:genServerName(spout, TopoId, SpoutName, Index),
+	SpoutModule = sardine_utils:getModule(spout, TopoId, SpoutName),
 	io:format("Module:~p~n", [SpoutModule]),
 	
-	WorkerPath = zk:genPath(TopoId, spout, SpoutName, Index),
-	zk:set(WorkerPath, #worker_info{self_name = SelfServerName, node_name = node()}),
+	WorkerPath = sardine_zk:genPath(TopoId, spout, SpoutName, Index),
+	sardine_zk:set(WorkerPath, #worker_info{self_name = SelfServerName, node_name = node()}),
 	
 	
 	OriginalState = #server_state{self_name = SelfServerName,

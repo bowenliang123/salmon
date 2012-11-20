@@ -25,12 +25,12 @@
 %% External functions
 %% ====================================================================
 start_link(TopoId, Bolt, Index) ->
-	BoltServerName = utils:genServerName(bolt, TopoId, Bolt, Index),
+	BoltServerName = sardine_utils:genServerName(bolt, TopoId, Bolt, Index),
 	gen_server:start_link({global,BoltServerName}, bolt_worker, [TopoId, Bolt, Index], []).
 %% 	startrun(TopoId,Bolt,Index).
 
 startrun(TopoId,Spout,Index) ->
-	BoltServerName = utils:genServerName(bolt, TopoId, Spout, Index),
+	BoltServerName = sardine_utils:genServerName(bolt, TopoId, Spout, Index),
 	gen_server:cast({global,BoltServerName}, startrun),
 	ok.
 
@@ -39,7 +39,7 @@ execute(Module, SelfServerName)->
 	
 	SpoutTuple = Module:nextTuple(),
 	io:format("~p~n",[SpoutTuple]),
-	ToServerList = utils:getToWorkerList(SelfServerName),
+	ToServerList = sardine_utils:getToWorkerList(SelfServerName),
 	emitTuples(SpoutTuple,ToServerList),
 	execute(Module, SelfServerName).
 
@@ -57,13 +57,13 @@ execute(Module, SelfServerName)->
 %% --------------------------------------------------------------------
 init([TopoId, Name, Index]) ->
 	io:format("it is bolt_server init~n"),
-	SelfServerName = utils:genServerName(bolt, TopoId, Name, Index),
+	SelfServerName = sardine_utils:genServerName(bolt, TopoId, Name, Index),
 	io:format("ServerName:~p~n", [SelfServerName]),
-	SpoutModule = utils:getModule(bolt, TopoId, Name),
+	SpoutModule = sardine_utils:getModule(bolt, TopoId, Name),
 	io:format("Module:~p~n", [SpoutModule]),
 	
-	WorkerPath = zk:genPath(TopoId, bolt, Name, Index),
-	zk:set(WorkerPath, #worker_info{self_name = SelfServerName, node_name = node()}),
+	WorkerPath = sardine_zk:genPath(TopoId, bolt, Name, Index),
+	sardine_zk:set(WorkerPath, #worker_info{self_name = SelfServerName, node_name = node()}),
 	
 	
 	OriginalState = #server_state{self_name = SelfServerName,
@@ -88,8 +88,8 @@ init([TopoId, Name, Index]) ->
 %% --------------------------------------------------------------------
 handle_call({collect,Tuple}, From, State) ->
 	io:format("Collect:~p~n", [Tuple]),
-	{TopoId, Type, Name} = utils:getDataFromState(State),
-	Module = utils:getModule(Type, TopoId, Name),
+	{TopoId, Type, Name} = sardine_utils:getDataFromState(State),
+	Module = sardine_utils:getModule(Type, TopoId, Name),
 	NextTuple = Module:nextTuple(Tuple),
 	io:format("NEXTUPLE:~p~n", [NextTuple]),
     {reply, State, State};

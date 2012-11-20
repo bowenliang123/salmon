@@ -17,8 +17,11 @@
 %%
 %% API Functions
 %%
-submitTopology(_Cluster, Topo) when is_record(Topo, topoConfig) ->
-	_Topo1 = parseConns(Topo).
+submitTopology(Cluster, TopoConfig) when is_record(TopoConfig, topoConfig) ->
+	TopoConfig_1 = parseConns(TopoConfig),
+	TopoConfig_2 = varifyActorFilesReady(TopoConfig_1),
+	sardine:publishTopology(Cluster, TopoConfig_2).
+	
 
 
 %%
@@ -28,7 +31,6 @@ parseConns(Topo) when is_record(Topo, topoConfig) ->
 	#topoConfig{spouts = SpoutsConfigs, bolts = BoltsConfigs, conns = ConnsConfigs} = Topo,
 	VerifiedConnPairsList = verifyConns(ConnsConfigs, SpoutsConfigs, BoltsConfigs),
 	{SpoutsConfigs1,BoltsConfigs1} = putConnPairs(VerifiedConnPairsList,SpoutsConfigs,BoltsConfigs),
-%% 	io:format("SS~p~nBB~p~n", [SpoutsConfigs1,BoltsConfigs1]),
 	_Topo1 = Topo#topoConfig{spouts = SpoutsConfigs1, bolts = BoltsConfigs1}.
 
 
@@ -74,15 +76,7 @@ getBoltsIdList([H|T] = _BoltsConfigs, ResultList) when is_record(H, boltConfig) 
 getBoltsIdList([], ResultList) ->
 	ResultList.
 
-
-%% getConnPairsList(ConnsConfigs) ->
-%% 	genConnPairsList(ConnsConfigs,[]).
-%% genConnPairsList([H|T] = ConnsConfigs, ResultList)
-%%   when is_record(H, connConfig)->
-%% 	genConnPairsList(T, [{H#connConfig.from, H#connConfig.to}|ResultList]);
-%% genConnPairsList([],ResultList)->
-%% 	ResultList.
-
+%% 将Conn连接信息写入SpoutsConfigs、BoltConfigs
 putConnPairs(VerifiedConnPairsList, SpoutsConfigs, BoltsConfigs) ->
 	SpoutsConfigs1 = putConnPairsToSpouts(VerifiedConnPairsList, SpoutsConfigs),
 	BoltsConfigs1 = putConnPairsToBolts(VerifiedConnPairsList, BoltsConfigs),
@@ -97,7 +91,6 @@ putConnCongfigsToSpouts(_, [], ResultList) ->
 putConnCongfigsToSpouts(ConnConfigs,[H|T] = _SpoutsConfigs, ResultList)
   when is_record(H, spoutConfig)->	
 	H1 = putConnsToSpout(ConnConfigs, H),
-	io:format("RR~p~nTT~p~nH1~p~n", [ResultList,T,H1]),
 	putConnCongfigsToSpouts(ConnConfigs, T, [H1|ResultList]).
 
 
@@ -128,7 +121,6 @@ putConnCongfigsToBolts(_, [], ResultList) ->
 putConnCongfigsToBolts(ConnConfigs,[H|T] = _BoltsConfigs, ResultList)
   when is_record(H, boltConfig)->	
 	H1 = putConnsToBolt(ConnConfigs, H),
-	io:format("RR~p~nTT~p~nH1~p~n", [ResultList,T,H1]),
 	putConnCongfigsToBolts(ConnConfigs, T, [H1|ResultList]).
 
 
@@ -150,3 +142,6 @@ putSingleConnToBolt(ConnConfig, BoltConfig)
 			BoltConfig
 	end.
 
+%% 验证模块文件是否存在本地
+varifyActorFilesReady(Topo) when is_record(Topo, topoConfig) ->
+	Topo.
