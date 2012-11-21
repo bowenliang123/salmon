@@ -16,7 +16,7 @@
 -export([cluster/2]).
 
 
--export([newTopo/0]).
+-export([newTopo/0, newTopo/1]).
 
 -export([newSpout/2, newSpout/3]).
 -export([setSpout/3, setSpout/4]).
@@ -42,6 +42,8 @@ cluster(ZkIp, Port)->
 %% Topology
 newTopo()->
 	sardine_topoBuilder:newTopo().
+newTopo(TopologyId)->
+	sardine_topoBuilder:newTopo(TopologyId).
 %% Spout
 %% Add Spout
 newSpout(Id, Module) ->
@@ -81,7 +83,9 @@ shuffleGrouping(Topo, FromActorId, ToActorId) when is_record(Topo, topoConfig) -
 %% Check and Submit Topoloy Config to Zookeeper
 submitTopology(Cluster, Topo)
   when is_record(Cluster, clusterConfig) and is_record(Topo, topoConfig) ->
-	sardine_submitter:submitTopology(Cluster, Topo).
+	Topo_1 = sardine_submitter:submitTopology(Cluster, Topo),
+	io:format("Topo to publish:~n~p~n",[Topo_1]),
+	sardine:publishTopology(Cluster, Topo_1).
 
 publishTopology(Cluster, Topo)
   when is_record(Cluster, clusterConfig) and is_record(Topo, topoConfig) ->
