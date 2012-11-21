@@ -62,8 +62,8 @@ init([TopoId, SpoutName, Index]) ->
 	SpoutModule = sardine_utils:getModule(spout, TopoId, SpoutName),
 	io:format("Module:~p~n", [SpoutModule]),
 	
-	WorkerPath = sardine_zk:genPath(TopoId, spout, SpoutName, Index),
-	sardine_zk:set(WorkerPath, #worker_info{self_name = SelfServerName, node_name = node()}),
+	WorkerPath = zk:genPath(TopoId, spout, SpoutName, Index),
+	zk:set(WorkerPath, #worker_info{self_name = SelfServerName, node_name = node()}),
 	
 	
 	OriginalState = #server_state{self_name = SelfServerName,

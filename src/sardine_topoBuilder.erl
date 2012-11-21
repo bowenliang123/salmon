@@ -13,7 +13,7 @@
 %%
 %% Exported Functions
 %%
--export([newTopo/0]).
+-export([newTopo/0, newTopo/1]).
 -export([setSpout/2, setSpout/3, setSpout/4]).
 -export([setBolt/2, setBolt/3, setBolt/4]).
 
@@ -22,6 +22,8 @@
 %%
 newTopo() ->
 	#topoConfig{}.
+newTopo(TopologyId) ->
+	#topoConfig{id = TopologyId}.
 
 
 %% adding Spout

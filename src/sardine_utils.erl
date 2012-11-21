@@ -22,35 +22,6 @@
 %% API Functions
 %%
 init()->
-	application:start(ezk),
-	TopoId = "topo1",
-	Path1 = sardine_zk:genPath(TopoId),
-	sardine_zk:fs(Path1, ""),
-	
-	Path2 = sardine_zk:genPath(TopoId,spouts),
-	sardine_zk:fs(Path2, ["Producer"]),
-	
-	Path3 = sardine_zk:genPath(TopoId,bolts),
-	sardine_zk:fs(Path3, ["Consumer"]),
-	
-	Path99 = sardine_zk:genPath(TopoId,conns),
-	sardine_zk:fs(Path99, ["Producer"]),
-	
-	Path4 = sardine_zk:genPath(TopoId,spouts,"Producer"),
-	sardine_zk:fs(Path4, #type_info{module=examplespout,count=1}),
-	
-	Path5 = sardine_zk:genPath(TopoId,bolts,"Consumer"),
-	sardine_zk:fs(Path5, #type_info{module=examplebolt,count=1}),
-	
-	Path6 = sardine_zk:genPath(TopoId,spouts,"Producer",0),
-	sardine_zk:fs(Path6, #worker_info{}),
-	
-	Path7 = sardine_zk:genPath(TopoId,bolts,"Consumer",0),
-	sardine_zk:fs(Path7, #worker_info{}),
-	
-	Path8 = sardine_zk:genPath(TopoId, conns, "Producer"),
-	sardine_zk:fs(Path8, ["Consumer"]),
-	
 	ok.
 
 
@@ -79,8 +50,8 @@ genServerName(Type,TopoId,SpoutTypeName,Index) ->
 
 
 getModule(Type, TopoId, Name) ->
-	Path = sardine_zk:genPath(TopoId, Type, Name),
-	SpoutTypeInfo = sardine_zk:get(Path),
+	Path = zk:genPath(TopoId, Type, Name),
+	SpoutTypeInfo = zk:get(Path),
 	Module = SpoutTypeInfo#type_info.module,
 	Module.
 
@@ -89,7 +60,7 @@ getToWorkerList(SelfServerName) ->
 	State = gen_server:call({global,SelfServerName}, getServerState),
 	
 	{TopoId, _Type, Name} = getDataFromState(State),
-	ToList = sardine_zk:get(sardine_zk:genPath(TopoId, conns, Name)),
+	ToList = zk:get(zk:genPath(TopoId, conns, Name)),
 	case ToList of
 		{error,_} ->
 			[];
@@ -128,7 +99,7 @@ ba(_Path,-1,Result)->
 	Result;
 ba(Path,Index,Result)->	
 	Path2 = sardine_utils:concatStrs([Path,"/",Index]),
-	WorkerInfo = sardine_zk:get(Path2),
+	WorkerInfo = zk:get(Path2),
 	ba(Path,Index-1,lists:append([Result,[WorkerInfo]])).	
 
 
@@ -139,8 +110,8 @@ action(TopoId, ToList)->
 action(TopoId, [], ResultList)->
 	ResultList;
 action(TopoId, [H|T] = ToList, ResultList)->
-	Path = sardine_zk:genPath(TopoId, bolts, H),
-	Count =  (sardine_zk:get(Path))#type_info.count,
+	Path = zk:genPath(TopoId, bolts, H),
+	Count =   (zk:get(Path))#type_info.count,
 	Result = ba(Path,Count),
 	action(TopoId, T, lists:append([ResultList, Result])).
 	
