@@ -19,8 +19,7 @@
 %%
 submitTopology(Cluster, TopoConfig) when is_record(TopoConfig, topoConfig) ->
 	TopoConfig_1 = parseConns(TopoConfig),
-	TopoConfig_2 = varifyActorFilesReady(TopoConfig_1),
-	sardine:publishTopology(Cluster, TopoConfig_2).
+	TopoConfig_2 = varifyActorFilesReady(TopoConfig_1).
 	
 
 
