@@ -1,7 +1,7 @@
 %% Author: Administrator
 %% Created: 2012-11-15
 %% Description: TODO: Add description to sardine_topoBuilder
--module(sardine_topoBuilder).
+-module(sm_topoBuilder).
 
 %%
 %% Include files
@@ -33,11 +33,11 @@ setSpout(Topo, SpoutConfig) when is_record(Topo, topoConfig)->
 	
 
 setSpout(Topo, Id, Module) when is_record(Topo, topoConfig) ->
-	sardine:setSpout(Topo, Id, Module, 1).
+	sm:setSpout(Topo, Id, Module, 1).
 
 setSpout(Topo, Id, Module, Parallelism_hint) when is_record(Topo, topoConfig), is_number(Parallelism_hint) ->
-	NewSpoutConfig = sardine_spout:newSpout(Id, Module, Parallelism_hint),
-	_Topo1 = sardine_topoBuilder:setSpout(Topo, NewSpoutConfig).
+	NewSpoutConfig = sm_spout:newSpout(Id, Module, Parallelism_hint),
+	_Topo1 = sm_topoBuilder:setSpout(Topo, NewSpoutConfig).
 
 %% adding Bolt
 setBolt(Topo, BoltConfig) when is_record(Topo, topoConfig) ->
@@ -49,8 +49,8 @@ setBolt(Topo, Id, Module) when is_record(Topo, topoConfig) ->
 	setSpout(Topo, Id, Module, 1).
 
 setBolt(Topo, Id, Module, Parallelism_hint) when is_record(Topo, topoConfig), is_number(Parallelism_hint) ->
-	NewBoltConfig = sardine_bolt:newBolt(Id, Module, Parallelism_hint),
-	_Topo1 = sardine_topoBuilder:setBolt(Topo, NewBoltConfig).
+	NewBoltConfig = sm_bolt:newBolt(Id, Module, Parallelism_hint),
+	_Topo1 = sm_topoBuilder:setBolt(Topo, NewBoltConfig).
 
 %%
 %% Local Functions

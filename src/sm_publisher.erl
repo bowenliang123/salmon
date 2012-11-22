@@ -1,7 +1,7 @@
 %% Author: Administrator
 %% Created: 2012-11-21
 %% Description: TODO: Add description to sardine_publisher
--module(sardine_publisher).
+-module(sm_publisher).
 
 %%
 %% Include files
@@ -30,15 +30,15 @@ publishTopology(Cluster, Topo)
 %%
 publishTopo(Cluster, TopoId, Topo) when is_record(Topo, topoConfig)->
 	{ok, ConnPId} = getTempConn(Cluster),
-	{ok, OriginalToposIdList} = zk:get(ConnPId, "/topos"),
+	{ok, OriginalToposIdList} = sm_zk:get(ConnPId, "/topos"),
 	NewToposList = addToToposIdList(OriginalToposIdList, TopoId),
 	if NewToposList=/= OriginalToposIdList->
-		   zk:set(ConnPId, "/topos", NewToposList);
+		   sm_zk:set(ConnPId, "/topos", NewToposList);
 		  true -> ok
 	end,
-	Path = zk:genPath(TopoId),
-	zk:delete_all(ConnPId, Path),
-	zk:create(ConnPId, Path, Topo),
+	Path = sm_zk:genPath(TopoId),
+	sm_zk:delete_all(ConnPId, Path),
+	sm_zk:create(ConnPId, Path, Topo),
 	ezk:end_connection(ConnPId, "initialTopo").
 
 publishSpouts(Cluster, TopoId, Topo) when is_record(Topo, topoConfig)->
@@ -57,7 +57,7 @@ publishBolts(Cluster, TopoId, Topo) when is_record(Topo, topoConfig)->
 initialSpouts(ConnPId, TopoId, [H|T] = _SpoutsConfigList)
   when is_record(H, spoutConfig)->
 	#spoutConfig{id = SpoutId, count = Count} = H,
-	case zk:get(ConnPId, zk:genPath(TopoId, spouts)) of
+	case sm_zk:get(ConnPId, sm_zk:genPath(TopoId, spouts)) of
 		{ok, OldSpoutsIdList} ->
 			case sardine_common:isInList(SpoutId, OldSpoutsIdList) of
 				false->
@@ -65,12 +65,12 @@ initialSpouts(ConnPId, TopoId, [H|T] = _SpoutsConfigList)
 				true->
 					NewSpoutsIdList = OldSpoutsIdList
 			end,
-			zk:replace(ConnPId, zk:genPath(TopoId, spouts), NewSpoutsIdList);
+			sm_zk:replace(ConnPId, sm_zk:genPath(TopoId, spouts), NewSpoutsIdList);
 		_->
-			zk:replace(ConnPId, zk:genPath(TopoId, spouts), [])
+			sm_zk:replace(ConnPId, sm_zk:genPath(TopoId, spouts), [])
 	end,	
-	Path = zk:genPath(TopoId, spout, SpoutId),
-	zk:replace(ConnPId, Path, H),
+	Path = sm_zk:genPath(TopoId, spout, SpoutId),
+	sm_zk:replace(ConnPId, Path, H),
 	initialSpoutChildren(ConnPId, TopoId, SpoutId, Count),
 	initialSpouts(ConnPId, TopoId, T);
 initialSpouts(_, _, []) ->
@@ -81,8 +81,8 @@ initialSpoutChildren(ConnPId, TopoId, SpoutId, Count) when (Count>=0) ->
   
 initialSpoutChildren(ConnPId, TopoId, SpoutId, Count, Index)
   when (Count>=0) and (Index>=0) and (Index<Count) ->
-	Path = zk:genPath(TopoId, spout, SpoutId, Index),
-	zk:create(ConnPId, Path, null),
+	Path = sm_zk:genPath(TopoId, spout, SpoutId, Index),
+	sm_zk:create(ConnPId, Path, null),
 	initialSpoutChildren(ConnPId, TopoId, SpoutId, Count, Index+1);
 initialSpoutChildren(_,_,_,_,_) ->
 	ok.
@@ -91,7 +91,7 @@ initialSpoutChildren(_,_,_,_,_) ->
 initialBolts(ConnPId, TopoId, [H|T] = _BoltsConfigList)
   when is_record(H, boltConfig)->
 	#boltConfig{id = BoltId, count = Count} = H,
-	case zk:get(ConnPId, zk:genPath(TopoId, bolts)) of
+	case sm_zk:get(ConnPId, sm_zk:genPath(TopoId, bolts)) of
 		{ok, OldBoltsIdList} ->
 			case sardine_common:isInList(BoltId, OldBoltsIdList) of
 				false->
@@ -99,12 +99,12 @@ initialBolts(ConnPId, TopoId, [H|T] = _BoltsConfigList)
 				true->
 					NewBoltsIdList = OldBoltsIdList
 			end,
-			zk:replace(ConnPId, zk:genPath(TopoId, bolts), NewBoltsIdList);
+			sm_zk:replace(ConnPId, sm_zk:genPath(TopoId, bolts), NewBoltsIdList);
 		_->
-			zk:replace(ConnPId, zk:genPath(TopoId, bolts), [])
+			sm_zk:replace(ConnPId, sm_zk:genPath(TopoId, bolts), [])
 	end,	
-	Path = zk:genPath(TopoId, bolts, BoltId),
-	zk:replace(ConnPId, Path, H),
+	Path = sm_zk:genPath(TopoId, bolts, BoltId),
+	sm_zk:replace(ConnPId, Path, H),
 	initialBoltChildren(ConnPId, TopoId, BoltId, Count),
 	initialBolts(ConnPId, TopoId, T);
 initialBolts(_, _, []) ->
@@ -115,8 +115,8 @@ initialBoltChildren(ConnPId, TopoId, BoltId, Count) when (Count>=0) ->
   
 initialBoltChildren(ConnPId, TopoId, BoltId, Count, Index)
   when (Count>=0) and (Index>=0) and (Index<Count) ->
-	Path = zk:genPath(TopoId, bolt, BoltId, Index),
-	zk:create(ConnPId, Path, null),
+	Path = sm_zk:genPath(TopoId, bolt, BoltId, Index),
+	sm_zk:create(ConnPId, Path, null),
 	initialBoltChildren(ConnPId, TopoId, BoltId, Count, Index+1);
 initialBoltChildren(_,_,_,_,_) ->
 	ok.
@@ -134,4 +134,4 @@ addToToposIdList(ToposList, TopoId) when is_list(ToposList) ->
 getTempConn(Cluster) when is_record(Cluster, clusterConfig)->
 	#clusterConfig{zkip = ZkIp, port = Port} = Cluster,
 	ZkServer = {ZkIp, Port, 30000, 100000},
-	{ok, ConnPid} = zk:startConnection([ZkServer]).
+	{ok, ConnPid} = sm_zk:startConnection([ZkServer]).

@@ -1,7 +1,7 @@
 %% Author: simonlbw
 %% Created: 2012-10-24
 %% Description: TODO: Add description to utils
--module(sardine_utils).
+-module(sm_utils).
 
 %%
 %% Include files
@@ -13,6 +13,7 @@
 %%
 -export([]).
 -export([concatStrs/1]).
+-export([isInList/2]).
 -export([file_exist/1]).
 -export([genServerName/4]).
 -export([getModule/3]).
@@ -35,23 +36,30 @@ file_exist(Filename) ->
         {error, Reason} -> io:format("~s is ~s~n", [Filename, Reason])
     end.
 
-
+isInList(Term, [H|T] = _TargetList) ->
+	if Term == H->
+		   true;
+	   true->
+		   isInList(Term, T)
+	end;
+isInList(_, [])->
+	false.
 
 
 genServerName(Type,TopoId,SpoutTypeName,Index) ->
 	case Type of
 		spout->
-			ServerName = sardine_utils:concatStrs(["spout",TopoId,SpoutTypeName,Index]);
+			ServerName = sm_utils:concatStrs(["spout",TopoId,SpoutTypeName,Index]);
 		bolt->
-			ServerName = sardine_utils:concatStrs(["bolt",TopoId,SpoutTypeName,Index])
+			ServerName = sm_utils:concatStrs(["bolt",TopoId,SpoutTypeName,Index])
 	end,
 	list_to_atom(ServerName).
 
 
 
 getModule(Type, TopoId, Name) ->
-	Path = zk:genPath(TopoId, Type, Name),
-	SpoutTypeInfo = zk:get(Path),
+	Path = sm_zk:genPath(TopoId, Type, Name),
+	SpoutTypeInfo = sm_zk:get(Path),
 	Module = SpoutTypeInfo#type_info.module,
 	Module.
 
@@ -60,7 +68,7 @@ getToWorkerList(SelfServerName) ->
 	State = gen_server:call({global,SelfServerName}, getServerState),
 	
 	{TopoId, _Type, Name} = getDataFromState(State),
-	ToList = zk:get(zk:genPath(TopoId, conns, Name)),
+	ToList = sm_zk:get(sm_zk:genPath(TopoId, conns, Name)),
 	case ToList of
 		{error,_} ->
 			[];
@@ -98,8 +106,8 @@ ba(Path,Count)->
 ba(_Path,-1,Result)->
 	Result;
 ba(Path,Index,Result)->	
-	Path2 = sardine_utils:concatStrs([Path,"/",Index]),
-	WorkerInfo = zk:get(Path2),
+	Path2 = sm_utils:concatStrs([Path,"/",Index]),
+	WorkerInfo = sm_zk:get(Path2),
 	ba(Path,Index-1,lists:append([Result,[WorkerInfo]])).	
 
 
@@ -110,8 +118,8 @@ action(TopoId, ToList)->
 action(TopoId, [], ResultList)->
 	ResultList;
 action(TopoId, [H|T] = ToList, ResultList)->
-	Path = zk:genPath(TopoId, bolts, H),
-	Count =   (zk:get(Path))#type_info.count,
+	Path = sm_zk:genPath(TopoId, bolts, H),
+	Count =    (sm_zk:get(Path))#type_info.count,
 	Result = ba(Path,Count),
 	action(TopoId, T, lists:append([ResultList, Result])).
 	

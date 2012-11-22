@@ -1,7 +1,7 @@
 %% Author: Administrator
 %% Created: 2012-10-28
 %% Description: TODO: Add description to zk
--module(zk).
+-module(sm_zk).
 
 %%
 %% Include files
@@ -52,7 +52,7 @@ startEzk() ->
 	end.
 
 exists(Path) ->
-	{ok,ConnPid} =  zk:getConnection(),
+	{ok,ConnPid} =  sm_zk:getConnection(),
 	exists(ConnPid, Path).
 
 exists(ConnPid, Path) when is_pid(ConnPid) ->
@@ -68,7 +68,7 @@ exists(ConnPid, Path) when is_pid(ConnPid) ->
 
 
 get(Path) ->
-	{ok,ConnPid} =  zk:getConnection(),
+	{ok,ConnPid} =  sm_zk:getConnection(),
 	get(ConnPid, Path).
 
 get(ConnPid, Path) when is_pid(ConnPid) ->
@@ -84,7 +84,7 @@ get(ConnPid, Path) when is_pid(ConnPid) ->
 
 
 set(Path, ContentTerm) ->
-	{ok,ConnPid} = zk:getConnection(),
+	{ok,ConnPid} = sm_zk:getConnection(),
 	set(ConnPid, Path, ContentTerm).
 
 set(ConnPid, Path, ContentTerm) when is_pid(ConnPid) ->
@@ -98,7 +98,7 @@ set(ConnPid, Path, ContentTerm) when is_pid(ConnPid) ->
 
 
 create(Path, ContentTerm) ->
-	{ok,ConnPid} = zk:getConnection(),
+	{ok,ConnPid} = sm_zk:getConnection(),
 	create(ConnPid, Path, ContentTerm).
 
 create(ConnPid, Path, ContentTerm) when is_pid(ConnPid) ->
@@ -112,15 +112,15 @@ create(ConnPid, Path, ContentTerm) when is_pid(ConnPid) ->
 
 
 replace(Path, ContentTerm) ->
-	{ok,ConnPid} = zk:getConnection(),
+	{ok,ConnPid} = sm_zk:getConnection(),
 	replace(ConnPid, Path, ContentTerm).
 
 replace(ConnPid, Path, ContentTerm) when is_pid(ConnPid)->
-	case zk:exists(ConnPid, Path) of
+	case sm_zk:exists(ConnPid, Path) of
 		false->
-			Response = zk:create(ConnPid, Path, ContentTerm);
+			Response = sm_zk:create(ConnPid, Path, ContentTerm);
 		true->
-			Response = zk:set(ConnPid, Path, ContentTerm)
+			Response = sm_zk:set(ConnPid, Path, ContentTerm)
 	end,
 	case Response of
 		{ok, _} -> 
@@ -130,7 +130,7 @@ replace(ConnPid, Path, ContentTerm) when is_pid(ConnPid)->
 	end.
 
 ls(Path) ->
-	{ok,ConnPid} = zk:getConnection(),
+	{ok,ConnPid} = sm_zk:getConnection(),
 	ls(ConnPid, Path).
 
 ls(ConnPid, Path) when is_pid(ConnPid) ->
@@ -143,7 +143,7 @@ ls(ConnPid, Path) when is_pid(ConnPid) ->
 	end.
 
 delete_all(Path) ->
-	{ok,ConnPid} = zk:getConnection(),
+	{ok,ConnPid} = sm_zk:getConnection(),
 	delete_all(ConnPid, Path).
 
 delete_all(ConnPid, Path) when is_pid(ConnPid)->
@@ -154,35 +154,35 @@ delete_all(ConnPid, Path) when is_pid(ConnPid)->
 %% Generate Path to Znode
 genPath(TopoId)->
 	RootPath = "/topos",
-	sardine_utils:concatStrs([RootPath,"/",TopoId]).
+	sm_utils:concatStrs([RootPath,"/",TopoId]).
 
 genPath(TopoId, Type) ->
 	Path = genPath(TopoId), 
 	case Type of
 		spout->
-			Path2 = sardine_utils:concatStrs([Path, "/spouts"]);
+			Path2 = sm_utils:concatStrs([Path, "/spouts"]);
 		bolt->
-			Path2 = sardine_utils:concatStrs([Path, "/bolts"]);
+			Path2 = sm_utils:concatStrs([Path, "/bolts"]);
 		conn->
-			Path2 = sardine_utils:concatStrs([Path, "/conns"]);
+			Path2 = sm_utils:concatStrs([Path, "/conns"]);
 		
 		spouts->
-			Path2 = sardine_utils:concatStrs([Path, "/spouts"]);
+			Path2 = sm_utils:concatStrs([Path, "/spouts"]);
 		bolts->
-			Path2 = sardine_utils:concatStrs([Path, "/bolts"]);
+			Path2 = sm_utils:concatStrs([Path, "/bolts"]);
 		conns->
-			Path2 = sardine_utils:concatStrs([Path, "/conns"])
+			Path2 = sm_utils:concatStrs([Path, "/conns"])
 	end,
 	Path2.
 
 genPath(TopoId, Type, Name) ->
 	Path = genPath(TopoId, Type),
-	sardine_utils:concatStrs([Path, "/", Name]).
+	sm_utils:concatStrs([Path, "/", Name]).
 
 genPath(TopoId, Type, Name, Index) ->
 	if  (Type == spouts) or (Type == bolts) or (Type == spout) or (Type == bolt) ->
 		Path = genPath(TopoId, Type, Name),
-		sardine_utils:concatStrs([Path, "/", Index])
+		sm_utils:concatStrs([Path, "/", Index])
 	end.
 
 %%

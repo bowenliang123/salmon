@@ -1,7 +1,7 @@
 %% Author: Administrator
 %% Created: 2012-11-16
 %% Description: TODO: Add description to sardine_submitter
--module(sardine_submitter).
+-module(sm_submitter).
 
 %%
 %% Include files
