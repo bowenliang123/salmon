@@ -5,8 +5,7 @@
   {registered, []},
   {applications, [
                   kernel,
-                  stdlib,
-                  sasl
+                  stdlib
                  ]},
   {mod, {salmon, []}},
   {env, [{default_hook_interval, 5000}]}
