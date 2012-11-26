@@ -30,12 +30,7 @@ publishTopology(Cluster, Topo)
 %%
 publishTopo(Cluster, TopoId, Topo) when is_record(Topo, topoConfig)->
 	{ok, ConnPId} = getTempConn(Cluster),
-	{ok, OriginalToposIdList} = sm_zk:get(ConnPId, "/topos"),
-	NewToposList = addToToposIdList(OriginalToposIdList, TopoId),
-	if NewToposList=/= OriginalToposIdList->
-		   sm_zk:set(ConnPId, "/topos", NewToposList);
-		  true -> ok
-	end,
+	{ok, _ToposIdList} = sm_zk:ls(ConnPId, "/topos"),
 	Path = sm_zk:genPath(TopoId),
 	sm_zk:delete_all(ConnPId, Path),
 	sm_zk:create(ConnPId, Path, Topo),
@@ -59,7 +54,7 @@ initialSpouts(ConnPId, TopoId, [H|T] = _SpoutsConfigList)
 	#spoutConfig{id = SpoutId, count = Count} = H,
 	case sm_zk:get(ConnPId, sm_zk:genPath(TopoId, spouts)) of
 		{ok, OldSpoutsIdList} ->
-			case sardine_common:isInList(SpoutId, OldSpoutsIdList) of
+			case sm_utils:isInList(SpoutId, OldSpoutsIdList) of
 				false->
 					NewSpoutsIdList = [SpoutId, OldSpoutsIdList];
 				true->
@@ -93,7 +88,7 @@ initialBolts(ConnPId, TopoId, [H|T] = _BoltsConfigList)
 	#boltConfig{id = BoltId, count = Count} = H,
 	case sm_zk:get(ConnPId, sm_zk:genPath(TopoId, bolts)) of
 		{ok, OldBoltsIdList} ->
-			case sardine_common:isInList(BoltId, OldBoltsIdList) of
+			case sm_utils:isInList(BoltId, OldBoltsIdList) of
 				false->
 					NewBoltsIdList = [BoltId, OldBoltsIdList];
 				true->
@@ -123,7 +118,7 @@ initialBoltChildren(_,_,_,_,_) ->
 
 
 addToToposIdList(ToposList, TopoId) when is_list(ToposList) ->
-	case sardine_common:isInList(TopoId, ToposList) of
+	case sm_utils:isInList(TopoId, ToposList) of
 		true->
 			ToposList;
 		false->

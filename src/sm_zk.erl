@@ -13,10 +13,14 @@
 -export([]).
 -export([get/1, set/2, create/2, ls/1, replace/2, exists/1, delete_all/1]).
 -export([get/2, set/3, create/3, ls/2, replace/3, exists/2, delete_all/2]).
+-export([rootPath/0]).
 -export([genPath/1, genPath/2, genPath/3, genPath/4]).
 
 -export([ifEzkLaunched/0]).
 -export([getConnection/0, startConnection/1]).
+
+
+-define(ROOT_PATH,"/topos").
 
 %%
 %% API Functions
@@ -152,9 +156,11 @@ delete_all(ConnPid, Path) when is_pid(ConnPid)->
 
 
 %% Generate Path to Znode
+rootPath()->
+	?ROOT_PATH.
+
 genPath(TopoId)->
-	RootPath = "/topos",
-	sm_utils:concatStrs([RootPath,"/",TopoId]).
+	sm_utils:concatStrs([?ROOT_PATH,"/",TopoId]).
 
 genPath(TopoId, Type) ->
 	Path = genPath(TopoId), 

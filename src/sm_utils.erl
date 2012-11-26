@@ -46,12 +46,12 @@ isInList(_, [])->
 	false.
 
 
-genServerName(Type,TopoId,SpoutTypeName,Index) ->
+genServerName(Type,TopoId,TypeId,Index) ->
 	case Type of
 		spout->
-			ServerName = sm_utils:concatStrs(["spout",TopoId,SpoutTypeName,Index]);
+			ServerName = sm_utils:concatStrs(["spout",TopoId,TypeId,Index]);
 		bolt->
-			ServerName = sm_utils:concatStrs(["bolt",TopoId,SpoutTypeName,Index])
+			ServerName = sm_utils:concatStrs(["bolt",TopoId,TypeId,Index])
 	end,
 	list_to_atom(ServerName).
 

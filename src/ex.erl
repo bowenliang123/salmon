@@ -26,7 +26,7 @@ ex()->
 	Topo6 = sm:setBolt(Topo5, "g", "h", 4),
 	Topo7 = sm:shuffleGrouping(Topo6, "e", "g"),
 	io:format("Topo to submit:~n~p~n",[Topo7]),
-	Cluster = sm:cluster("192.168.204.128", 2181),
+	Cluster = sm:cluster("192.168.40.128", 2181),
 	FeedBack = sm:submitTopology(Cluster, Topo7).
 	
 
