@@ -37,7 +37,7 @@
 %% External functions
 %% ====================================================================
 start_link()->
-	supervisor:start_link({local,?SPOUTS_SUP}, ?SPOUTS_SUP, []).
+	supervisor:start_link({local,?SPOUTS_SUP}, ?MODULE, []).
 
 
 %% ====================================================================

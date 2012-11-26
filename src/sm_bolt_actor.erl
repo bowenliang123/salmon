@@ -14,19 +14,20 @@
 %% --------------------------------------------------------------------
 %% External exports
 -export([]).
--export([start_link/1]).
+-export([start_link/4]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
--record(state, {}).
+-record(state, {topoId, type, typeId, index}).
 
 %% ====================================================================
 %% External functions
 %% ====================================================================
-start_link(ActorName)->
-	error_logger:info_msg("Initial ~p~p~n", [?BOLT_ACTOR,ActorName]),
-	gen_server:start_link({global,ActorName}, ?MODULE, [], []).
+start_link(TopoId, bolt, TypeId, Index) ->
+	ActorName=sm_utils:genServerName(bolt, TopoId, TypeId, Index),
+	error_logger:info_msg("Initial ~p:~p~n", [?BOLT_ACTOR,ActorName]),
+	gen_server:start_link({local,ActorName}, ?MODULE, [TopoId, bolt, TypeId, Index], []).
 
 %% ====================================================================
 %% Server functions
@@ -40,8 +41,8 @@ start_link(ActorName)->
 %%          ignore               |
 %%          {stop, Reason}
 %% --------------------------------------------------------------------
-init([]) ->
-    {ok, #state{}}.
+init([TopoId, bolt, TypeId, Index]) ->
+    {ok, #state{topoId=TopoId, type=bolt, typeId=TypeId, index=Index}}.
 
 %% --------------------------------------------------------------------
 %% Function: handle_call/3

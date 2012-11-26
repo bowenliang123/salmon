@@ -117,10 +117,10 @@ startFishing(Interval)->
 			case Type of
 				bolt->
 					error_logger:info_msg("Bolt!~p~n",[ServerName]),
-					supervisor:start_child(?BOLTS_SUP, [ServerName]);
+					supervisor:start_child(?BOLTS_SUP, [TopoId, Type, TypeId, Index]);
 				spout->
 					error_logger:info_msg("Spout!~p~n",[ServerName]),
-					supervisor:start_child(?SPOUTS_SUP, [ServerName])
+					supervisor:start_child(?SPOUTS_SUP, [TopoId, Type, TypeId, Index])
 			end
 	end,
 	spawn(?MODULE,startFishing,[Interval]),
