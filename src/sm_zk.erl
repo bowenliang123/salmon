@@ -6,7 +6,7 @@
 %%
 %% Include files
 %%
-
+-include("../include/sm_topostatus.hrl").
 %%
 %% Exported Functions
 %%
@@ -15,6 +15,8 @@
 -export([get/2, set/3, create/3, ls/2, replace/3, exists/2, delete_all/2]).
 -export([rootPath/0]).
 -export([genPath/1, genPath/2, genPath/3, genPath/4]).
+
+-export([getTopoStatus/1,setTopoStatus/2]).
 
 -export([ifEzkLaunched/0]).
 -export([getConnection/0, startConnection/1]).
@@ -25,6 +27,8 @@
 %%
 %% API Functions
 %%
+
+%% Basic low-Level Zookeeper operations
 
 %% Check if an application already launched
 getConnection() ->
@@ -95,7 +99,7 @@ set(ConnPid, Path, ContentTerm) when is_pid(ConnPid) ->
 	Response = ezk:set(ConnPid, Path, term_to_binary(ContentTerm)),
 	case Response of
 		{ok, _} -> 
-			{ok, Path, ContentTerm};
+			{ok, {Path, ContentTerm}};
 		{_, _} ->
 			Response
 	end.
@@ -109,7 +113,7 @@ create(ConnPid, Path, ContentTerm) when is_pid(ConnPid) ->
 	Response = ezk:create(ConnPid, Path, term_to_binary(ContentTerm)),
 	case Response of
 		{ok, _} -> 
-			{ok,Path, ContentTerm};
+			{ok,{Path, ContentTerm}};
 		{_, _} ->
 			Response
 	end.
@@ -152,7 +156,23 @@ delete_all(Path) ->
 
 delete_all(ConnPid, Path) when is_pid(ConnPid)->
 	_Response = ezk:delete_all(ConnPid, Path).
-			
+		
+%% High-level zk operations
+getTopoStatus(TopoId)->
+	Path = sm_utils:concatStrs([sm_zk:genPath(TopoId), "/", status]),
+	{ok, Status} = sm_zk:get(Path),
+	Status.
+
+setTopoStatus(TopoId, Status) when is_atom(Status)->
+	Path = sm_utils:concatStrs([sm_zk:genPath(TopoId), "/", status]),
+	case sm_utils:isInList(Status, ?TOPO_STATUS_LIST) of
+		true->
+			{ok, R} = sm_zk:replace(Path, Status),
+			{ok, R};
+		false->
+			{error, not_valid_topo_status}
+	end.
+	
 
 
 %% Generate Path to Znode
