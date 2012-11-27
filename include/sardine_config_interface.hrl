@@ -8,8 +8,7 @@
 			id,
 			spouts = [],
 			bolts = [],
-			conns = [],
-			status = ready
+			conns = []
 		}).
 
 -record(spoutConfig,

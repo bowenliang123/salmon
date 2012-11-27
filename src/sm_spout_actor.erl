@@ -19,13 +19,13 @@
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
--record(state, {topoId, type, typeId, index}).
+-record(state, {topoId, type, typeId, index, module}).
 
 %% ====================================================================
 %% External functions
 %% ====================================================================
 start_link(TopoId, spout, TypeId, Index) ->
-	ActorName=sm_utils:genServerName(spout, TopoId, TypeId, Index),
+	ActorName=sm_utils:genServerName(TopoId, spout, TypeId, Index),
 	error_logger:info_msg("Initial ~p:~p~n", [?SPOUT_ACTOR,ActorName]),
 	gen_server:start_link({local,ActorName}, ?MODULE, [TopoId, spout, TypeId, Index], []).
 

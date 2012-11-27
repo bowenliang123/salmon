@@ -53,10 +53,12 @@ newSpout(Id, Module, Parallelism_hint) ->
 	sm_spout:newSpout(Id, Module, Parallelism_hint).
 
 
-setSpout(Topo, Id, Module) when is_record(Topo, topoConfig) ->
-	sm_topoBuilder:setSpout(Topo, Id, Module).
+setSpout(Topo, Id, Module)
+  when is_record(Topo, topoConfig) and is_atom(Module)->
+	sm:setSpout(Topo, Id, Module, 1).
 
-setSpout(Topo, Id, Module, Parallelism_hint) when is_record(Topo, topoConfig)->
+setSpout(Topo, Id, Module, Parallelism_hint)
+  when is_record(Topo, topoConfig) and is_atom(Module)->
 	sm_topoBuilder:setSpout(Topo, Id, Module, Parallelism_hint).
 
 %% Bolt
@@ -68,10 +70,12 @@ newBolt(Id, Module, Parallelism_hint) when is_number(Parallelism_hint)->
 	sm_bolt:newBolt(Id, Module, Parallelism_hint).
 
 
-setBolt(Topo, Id, Module) when is_record(Topo, topoConfig)->
-	sm_topoBuilder:setBolt(Topo, Id, Module).
+setBolt(Topo, Id, Module)
+  when is_record(Topo, topoConfig) and is_atom(Module) ->
+	sm:setBolt(Topo, Id, Module, 1).
 
-setBolt(Topo, Id, Module, Parallelism_hint) when is_record(Topo, topoConfig), is_number(Parallelism_hint)->
+setBolt(Topo, Id, Module, Parallelism_hint)
+  when is_record(Topo, topoConfig) and is_atom(Module)and is_number(Parallelism_hint) ->
 	sm_topoBuilder:setBolt(Topo, Id, Module, Parallelism_hint).
 
 %% Connection

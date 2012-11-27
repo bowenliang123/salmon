@@ -12,6 +12,7 @@
 %% --------------------------------------------------------------------
 -include("../include/sm.hrl").
 -include("../include/sardine_config_interface.hrl").
+-include("../include/sm_topostatus.hrl").
 %% --------------------------------------------------------------------
 %% External exports
 -export([]).
@@ -47,7 +48,7 @@ start_link()->
 init([]) ->
 	error_logger:info_msg("Initial ~p~n", [?MODULE]),
 	{ok, DEFAULT_HOOK_INTERVAL} = application:get_env(default_hook_interval),
-	spawn(?MODULE,startFishing,[DEFAULT_HOOK_INTERVAL]),
+	spawn_link(?MODULE,startFishing,[DEFAULT_HOOK_INTERVAL]),
     {ok, #state{}}.
 
 %% --------------------------------------------------------------------
@@ -113,7 +114,7 @@ startFishing(Interval)->
 			error_logger:info_msg("WE GOT ~p~n",[Response]),
 			Path=sm_zk:genPath(TopoId, Type, TypeId, Index),
 			sm_zk:set(Path, "hi"),
-			ServerName=sm_utils:genServerName(Type, TopoId, TypeId, Index),
+			ServerName=sm_utils:genServerName(TopoId, Type, TypeId, Index),
 			case Type of
 				bolt->
 					error_logger:info_msg("Bolt!~p~n",[ServerName]),
@@ -128,32 +129,28 @@ startFishing(Interval)->
 
 getReadyToposIdList()->
 	{ok,ToposIdList} = sm_zk:ls(sm_zk:rootPath()),
-	ResultList = pickReadyTopos(ToposIdList),
+	ResultList = pickupTopos(ToposIdList),
 	error_logger:info_msg("ResultList:~p~n",[ResultList]),
 	ResultList.
 	
 
-pickReadyTopos(ToposIdList)->
-	pickReadyTopos(ToposIdList,[]).
-pickReadyTopos([H|T] = ToposIdList, ResultToposIdList)->
-	case isReadyStatus(H) of
+pickupTopos(ToposIdList) ->
+	pickupTopos(ToposIdList,[]).
+pickupTopos([H|T] = _ToposIdList, ResultToposIdList) ->
+	case isPrepareStatus(H) of
 		false->
-			pickReadyTopos(T,ResultToposIdList);
+			pickupTopos(T,ResultToposIdList);
 		true->
-			pickReadyTopos(T,[H|ResultToposIdList])
+			pickupTopos(T,[H|ResultToposIdList])
 	end;
-pickReadyTopos([], ResultToposIdList)->
+pickupTopos([], ResultToposIdList) ->
 	ResultToposIdList.
 
-
-isReadyStatus(TopoId)->
-	Path = sm_zk:genPath(TopoId),
+isPrepareStatus(TopoId) ->
 	try
-		{ok, TopoConfig}=sm_zk:get(Path),
-		Status =  TopoConfig#topoConfig.status,
-		error_logger:info_msg("~p-~p~n",[TopoId,Status]),
+		Status =  sm_zk:getTopoStatus(TopoId),
 		case Status of
-			ready->
+			?TOPO_STATUS_PREPARE->
 				true;
 			_->
 				false
