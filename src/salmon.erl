@@ -44,6 +44,7 @@
 %%          {error, Reason}
 %% --------------------------------------------------------------------
 start(Type, StartArgs) ->
+	application:start(sasl),
     case sm_sup:start_link() of
 	{ok, Pid} ->
 		supervisor:start_child(?SPOUTS_SUP, [hi]),
