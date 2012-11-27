@@ -7,6 +7,7 @@
 %% Include files
 %%
 -include("../include/sardine_config_interface.hrl").
+-include("../include/sm_topostatus.hrl").
 %%
 %% Exported Functions
 %%
@@ -34,6 +35,8 @@ publishTopo(Cluster, TopoId, Topo) when is_record(Topo, topoConfig)->
 	Path = sm_zk:genPath(TopoId),
 	sm_zk:delete_all(ConnPId, Path),
 	sm_zk:create(ConnPId, Path, Topo),
+	R = sm_zk:setTopoStatus(TopoId, ?TOPO_STATUS_PREPARE),
+	error_logger:info_msg("~p~n",[R]),
 	ezk:end_connection(ConnPId, "initialTopo").
 
 publishSpouts(Cluster, TopoId, Topo) when is_record(Topo, topoConfig)->
@@ -56,13 +59,13 @@ initialSpouts(ConnPId, TopoId, [H|T] = _SpoutsConfigList)
 		{ok, OldSpoutsIdList} ->
 			case sm_utils:isInList(SpoutId, OldSpoutsIdList) of
 				false->
-					NewSpoutsIdList = [SpoutId, OldSpoutsIdList];
+					NewSpoutsIdList = [SpoutId | OldSpoutsIdList];
 				true->
 					NewSpoutsIdList = OldSpoutsIdList
 			end,
 			sm_zk:replace(ConnPId, sm_zk:genPath(TopoId, spouts), NewSpoutsIdList);
-		_->
-			sm_zk:replace(ConnPId, sm_zk:genPath(TopoId, spouts), [])
+		{error,no_dir}->
+			sm_zk:replace(ConnPId, sm_zk:genPath(TopoId, spouts), [SpoutId])
 	end,	
 	Path = sm_zk:genPath(TopoId, spout, SpoutId),
 	sm_zk:replace(ConnPId, Path, H),
@@ -90,13 +93,13 @@ initialBolts(ConnPId, TopoId, [H|T] = _BoltsConfigList)
 		{ok, OldBoltsIdList} ->
 			case sm_utils:isInList(BoltId, OldBoltsIdList) of
 				false->
-					NewBoltsIdList = [BoltId, OldBoltsIdList];
+					NewBoltsIdList = [BoltId | OldBoltsIdList];
 				true->
 					NewBoltsIdList = OldBoltsIdList
 			end,
 			sm_zk:replace(ConnPId, sm_zk:genPath(TopoId, bolts), NewBoltsIdList);
-		_->
-			sm_zk:replace(ConnPId, sm_zk:genPath(TopoId, bolts), [])
+		{error,no_dir}->
+			sm_zk:replace(ConnPId, sm_zk:genPath(TopoId, bolts), [BoltId])
 	end,	
 	Path = sm_zk:genPath(TopoId, bolts, BoltId),
 	sm_zk:replace(ConnPId, Path, H),
