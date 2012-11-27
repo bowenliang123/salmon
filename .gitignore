@@ -4,4 +4,4 @@ priv
 *.o
 *.beam
 *.plt
-*.DS*
+.DS_Store
