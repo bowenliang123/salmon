@@ -115,18 +115,9 @@ initialBoltChildren(ConnPId, TopoId, BoltId, Count, Index)
 	initialBoltChildren(ConnPId, TopoId, BoltId, Count, Index+1);
 initialBoltChildren(_,_,_,_,_) ->
 	ok.
-
-
-addToToposIdList(ToposList, TopoId) when is_list(ToposList) ->
-	case sm_utils:isInList(TopoId, ToposList) of
-		true->
-			ToposList;
-		false->
-			[TopoId|ToposList]
-	end.
 	
 
 getTempConn(Cluster) when is_record(Cluster, clusterConfig)->
 	#clusterConfig{zkip = ZkIp, port = Port} = Cluster,
 	ZkServer = {ZkIp, Port, 30000, 100000},
-	{ok, ConnPid} = sm_zk:startConnection([ZkServer]).
+	{ok, _ConnPid} = sm_zk:startConnection([ZkServer]).
