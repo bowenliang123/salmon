@@ -14,6 +14,7 @@
 -record(spoutConfig,
 		{
 			id,
+			topoId,
 			count = 1,
 			module,
 			to=[]
@@ -22,8 +23,9 @@
 -record(boltConfig,
 		{
 			id,
-			module,
+			topoId,
 			count = 1,
+			module,
 			from = [],
 			to = []
 		}).

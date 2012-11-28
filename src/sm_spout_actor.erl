@@ -11,23 +11,25 @@
 %% Include files
 %% --------------------------------------------------------------------
 -include("../include/sm.hrl").
+-include("../include/sardine_config_interface.hrl").
 %% --------------------------------------------------------------------
 %% External exports
 -export([]).
--export([start_link/4]).
+-export([start_link/2]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
--record(state, {topoId, type, typeId, index, module}).
+-record(state, {topoId, type, typeId, index, module, userData}).
 
 %% ====================================================================
 %% External functions
 %% ====================================================================
-start_link(TopoId, spout, TypeId, Index) ->
+start_link(SpoutConfig,Index) when is_record(SpoutConfig, spoutConfig) ->
+	#spoutConfig{topoId=TopoId, id=TypeId} = SpoutConfig,
 	ActorName=sm_utils:genServerName(TopoId, spout, TypeId, Index),
 	error_logger:info_msg("Initial ~p:~p~n", [?SPOUT_ACTOR,ActorName]),
-	gen_server:start_link({local,ActorName}, ?MODULE, [TopoId, spout, TypeId, Index], []).
+	gen_server:start_link({local,ActorName}, ?MODULE, {SpoutConfig,Index}, []).
 
 %% ====================================================================
 %% Server functions
@@ -41,8 +43,10 @@ start_link(TopoId, spout, TypeId, Index) ->
 %%          ignore               |
 %%          {stop, Reason}
 %% --------------------------------------------------------------------
-init([TopoId, spout, TypeId, Index]) ->
-    {ok, #state{topoId=TopoId, type=spout, typeId=TypeId, index=Index}}.
+init({SpoutConfig,Index}) when is_record(SpoutConfig, spoutConfig)->
+	#spoutConfig{topoId=TopoId, id=TypeId} = SpoutConfig,
+	Module = sm_utils:getModule(TopoId, spout, TypeId),
+    {ok, #state{topoId=TopoId, type=spout, typeId=TypeId, index=Index, module=Module}}.
 
 %% --------------------------------------------------------------------
 %% Function: handle_call/3

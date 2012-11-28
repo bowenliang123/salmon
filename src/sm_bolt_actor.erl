@@ -12,10 +12,11 @@
 %% --------------------------------------------------------------------
 -include("../include/sm.hrl").
 -include("../include/tuple.hrl").
+-include("../include/sardine_config_interface.hrl").
 %% --------------------------------------------------------------------
 %% External exports
 -export([]).
--export([start_link/4]).
+-export([start_link/2]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
@@ -25,9 +26,10 @@
 %% ====================================================================
 %% External functions
 %% ====================================================================
-start_link(TopoId, bolt, TypeId, Index) ->
+start_link(BoltConfig,Index) when is_record(BoltConfig, boltConfig)->
+	#boltConfig{topoId=TopoId, id=TypeId} = BoltConfig,
 	ActorName=sm_utils:genServerName(TopoId, bolt, TypeId, Index),
-	gen_server:start_link({local,ActorName}, ?MODULE, [TopoId, bolt, TypeId, Index], []).
+	gen_server:start_link({local,ActorName}, ?MODULE, {BoltConfig,Index}, []).
 
 %% ====================================================================
 %% Server functions
@@ -41,7 +43,8 @@ start_link(TopoId, bolt, TypeId, Index) ->
 %%          ignore               |
 %%          {stop, Reason}
 %% --------------------------------------------------------------------
-init([TopoId, bolt, TypeId, Index]) ->
+init({BoltConfig,Index}) when is_record(BoltConfig, boltConfig)->
+	#boltConfig{topoId=TopoId, id=TypeId} = BoltConfig,
 	ActorName=sm_utils:genServerName(TopoId, bolt, TypeId, Index),
 	error_logger:info_msg("Initial ~p:~p~n", [?BOLT_ACTOR,ActorName]),
 	Module = sm_utils:getModule(TopoId, bolt, TypeId),
@@ -68,10 +71,10 @@ handle_call(Request, From, State) ->
 %%          {noreply, State, Timeout} |
 %%          {stop, Reason, State}            (terminate/2 is called)
 %% --------------------------------------------------------------------
-handle_cast({nextTuple, Tuple}, State) ->
+handle_cast({nextTuple, Tuple, From}, State) ->
 	#state{module=Module,userData=UserData}=State,
 	{ok, Tuple1, UserData1}=Module:nextTuple(Tuple,UserData),
-	error_logger:info_msg("TupleDealed!!:~p~n",[Tuple1]),
+	error_logger:info_msg("From:~pTupleDealed!!:~p~n",[From,Tuple1]),
 	State1 = State#state{userData=UserData1},
     {noreply, State1};
 handle_cast(Msg, State) ->

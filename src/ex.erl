@@ -23,11 +23,13 @@ ex()->
 	Topo1 = sm:setSpout(Topo, "A", moduleA),
 	Topo2 = sm:setSpout(Topo1, "B", moduleB),
 	Topo3 = sm:setBolt(Topo2, "C", ex_bolt),
-	Topo4 = sm:shuffleGrouping(Topo3, "A", "C"),
-	Topo5 = sm:shuffleGrouping(Topo4, "B", "C"),
-	io:format("Topo to submit:~n~p~n",[Topo5]),
+	Topo4 = sm:setBolt(Topo3, "D", ex_bolt),
+	Topo5 = sm:shuffleGrouping(Topo4, "A", "C"),
+	Topo6 = sm:shuffleGrouping(Topo5, "B", "C"),
+	Topo7 = sm:shuffleGrouping(Topo6, "C", "D"),
+	io:format("Topo to submit:~n~p~n",[Topo7]),
 	Cluster = sm:cluster("192.168.207.128", 2181),
-	FeedBack = sm:submitTopology(Cluster, Topo5).
+	_FeedBack = sm:submitTopology(Cluster, Topo7).
 	
 xx()->
 	appmon:start(),
@@ -37,7 +39,7 @@ xx()->
 
 aa()->
 	ServerName=sm_utils:genServerName("t1", bolt, "C", 0),
-	gen_server:cast(ServerName,{nextTuple,#tuple{content="lbw"}}).
+	gen_server:cast(ServerName,{nextTuple,#tuple{content="lbw"},self()}).
 %%
 %% Local Functions
 %%

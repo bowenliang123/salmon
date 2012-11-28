@@ -112,16 +112,18 @@ startFishing(Interval)->
 			ok;
 		{?FOUND, {TopoId, Type, TypeId, Index}} = Response->
 			error_logger:info_msg("WE GOT ~p~n",[Response]),
+			ActorName = sm_utils:genServerName(TopoId, Type, TypeId, Index),
 			Path=sm_zk:genPath(TopoId, Type, TypeId, Index),
-			sm_zk:set(Path, "hi"),
-			ServerName=sm_utils:genServerName(TopoId, Type, TypeId, Index),
+			sm_zk:set(Path, {ActorName,node()}),
+			Path1 = sm_zk:genPath(TopoId, Type, TypeId),
+			{ok, TypeConfig} = sm_zk:get(Path1),
 			case Type of
-				bolt->
-					error_logger:info_msg("Bolt!~p~n",[ServerName]),
-					supervisor:start_child(?BOLTS_SUP, [TopoId, Type, TypeId, Index]);
 				spout->
-					error_logger:info_msg("Spout!~p~n",[ServerName]),
-					supervisor:start_child(?SPOUTS_SUP, [TopoId, Type, TypeId, Index])
+					error_logger:info_msg("Spout!~p~n",[ActorName]),
+					supervisor:start_child(?SPOUTS_SUP, [TypeConfig, Index]);
+				bolt->
+					error_logger:info_msg("Bolt!~p~n",[ActorName]),
+					supervisor:start_child(?BOLTS_SUP, [TypeConfig, Index])
 			end
 	end,
 	spawn(?MODULE,startFishing,[Interval]),
@@ -130,7 +132,6 @@ startFishing(Interval)->
 getReadyToposIdList()->
 	{ok,ToposIdList} = sm_zk:ls(sm_zk:rootPath()),
 	ResultList = pickupTopos(ToposIdList),
-	error_logger:info_msg("ResultList:~p~n",[ResultList]),
 	ResultList.
 	
 

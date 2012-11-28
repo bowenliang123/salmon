@@ -13,16 +13,16 @@
 %%
 -export([]).
 
--export([newSpout/2,newSpout/3]).
+-export([newSpout/3,newSpout/4]).
 
 %%
 %% API Functions
 %%
-newSpout(Id, Module)->
-	sm_spout:newSpout(Id, Module, 1).
+newSpout(TopoId, Id, Module)->
+	sm_spout:newSpout(TopoId, Id, Module, 1).
 
-newSpout(Id, Module, Parallelism_hint) ->
-	#spoutConfig{id = Id, module = Module, count = Parallelism_hint}.
+newSpout(TopoId, Id, Module, Parallelism_hint) ->
+	#spoutConfig{id = Id, topoId=TopoId, module = Module, count = Parallelism_hint}.
 
 
 %%

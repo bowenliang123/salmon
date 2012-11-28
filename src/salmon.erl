@@ -45,6 +45,7 @@
 %% --------------------------------------------------------------------
 start(Type, StartArgs) ->
 	application:start(sasl),
+	application:start(ezk),
     case sm_sup:start_link() of
 	{ok, Pid} ->
 		supervisor:start_child(?SPOUTS_SUP, [hi]),

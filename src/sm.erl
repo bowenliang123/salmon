@@ -21,7 +21,7 @@
 -export([newSpout/2, newSpout/3]).
 -export([setSpout/3, setSpout/4]).
 
--export([newBolt/2, newBolt/3]).
+-export([newBolt/3, newBolt/4]).
 -export([setBolt/3, setBolt/4]).
 
 -export([shuffleGrouping/3]).
@@ -47,7 +47,7 @@ newTopo(TopologyId)->
 %% Spout
 %% Add Spout
 newSpout(Id, Module) ->
-	sm_spout:newSpout(Id, Module, 1).
+	sm:newSpout(Id, Module, 1).
 
 newSpout(Id, Module, Parallelism_hint) ->
 	sm_spout:newSpout(Id, Module, Parallelism_hint).
@@ -63,11 +63,12 @@ setSpout(Topo, Id, Module, Parallelism_hint)
 
 %% Bolt
 %% Add Bolt
-newBolt(Id, Module) ->
-	sm_bolt:newBolt(Id, Module, 1).
+newBolt(Topo, Id, Module) ->
+	sm_bolt:newBolt(Topo, Id, Module, 1).
 
-newBolt(Id, Module, Parallelism_hint) when is_number(Parallelism_hint)->
-	sm_bolt:newBolt(Id, Module, Parallelism_hint).
+newBolt(Topo, Id, Module, Parallelism_hint)
+  when is_number(Parallelism_hint)->
+	sm_bolt:newBolt(Topo, Id, Module, Parallelism_hint).
 
 
 setBolt(Topo, Id, Module)
@@ -75,7 +76,7 @@ setBolt(Topo, Id, Module)
 	sm:setBolt(Topo, Id, Module, 1).
 
 setBolt(Topo, Id, Module, Parallelism_hint)
-  when is_record(Topo, topoConfig) and is_atom(Module)and is_number(Parallelism_hint) ->
+  when is_record(Topo, topoConfig) and is_atom(Module) and is_number(Parallelism_hint) ->
 	sm_topoBuilder:setBolt(Topo, Id, Module, Parallelism_hint).
 
 %% Connection

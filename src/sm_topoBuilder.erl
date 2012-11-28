@@ -31,9 +31,11 @@ setSpout(Topo, SpoutConfig) when is_record(Topo, topoConfig)->
 	OriginalSpouts = Topo#topoConfig.spouts,
 	Topo#topoConfig{spouts = [SpoutConfig|OriginalSpouts]}.
 
-setSpout(Topo, Id, Module, Parallelism_hint) when is_record(Topo, topoConfig), is_number(Parallelism_hint) ->
-	NewSpoutConfig = sm_spout:newSpout(Id, Module, Parallelism_hint),
-	_Topo1 = sm_topoBuilder:setSpout(Topo, NewSpoutConfig).
+setSpout(Topo, Id, Module, Parallelism_hint)
+  when is_record(Topo, topoConfig) and is_number(Parallelism_hint) ->
+	TopoId = Topo#topoConfig.id,
+	SpoutConfig1 = sm_spout:newSpout(TopoId, Id, Module, Parallelism_hint),
+	_Topo1 = sm_topoBuilder:setSpout(Topo, SpoutConfig1).
 
 %% adding Bolt
 setBolt(Topo, BoltConfig) when is_record(Topo, topoConfig) ->
@@ -41,8 +43,9 @@ setBolt(Topo, BoltConfig) when is_record(Topo, topoConfig) ->
 	Topo#topoConfig{bolts = [BoltConfig|OriginalBolts]}.
 
 setBolt(Topo, Id, Module, Parallelism_hint) when is_record(Topo, topoConfig), is_number(Parallelism_hint) ->
-	NewBoltConfig = sm_bolt:newBolt(Id, Module, Parallelism_hint),
-	_Topo1 = sm_topoBuilder:setBolt(Topo, NewBoltConfig).
+	TopoId = Topo#topoConfig.id,
+	BoltConfig1 = sm_bolt:newBolt(TopoId, Id, Module, Parallelism_hint),
+	_Topo1 = sm_topoBuilder:setBolt(Topo, BoltConfig1).
 
 %%
 %% Local Functions
