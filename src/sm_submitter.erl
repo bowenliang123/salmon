@@ -1,7 +1,7 @@
 %% Author: Administrator
 %% Created: 2012-11-16
 %% Description: TODO: Add description to sardine_submitter
--module(sardine_submitter).
+-module(sm_submitter).
 
 %%
 %% Include files
@@ -47,8 +47,8 @@ verifyEachConnPair([H|T] = _ConnsConfigs, SpoutsIdList, BoltsIdList, ResultConns
 		From==""; To==""->
 			verifyEachConnPair(T, SpoutsIdList, BoltsIdList, ResultConnsConfigsList);
 		true->
-			Flag1 = sardine_common:isInList(From, lists:append([SpoutsIdList,BoltsIdList])),
-			Flag2 = sardine_common:isInList(To, BoltsIdList),
+			Flag1 = sm_utils:isInList(From, lists:append([SpoutsIdList,BoltsIdList])),
+			Flag2 = sm_utils:isInList(To, BoltsIdList),
 			if
 				Flag1 and Flag2 ->
 					verifyEachConnPair(T, SpoutsIdList, BoltsIdList, [H|ResultConnsConfigsList]);

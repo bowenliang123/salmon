@@ -1,7 +1,7 @@
 %% Author: Administrator
 %% Created: 2012-11-15
 %% Description: TODO: Add description to sardine_grouping
--module(sardine_grouping).
+-module(sm_grouping).
 
 %%
 %% Include files

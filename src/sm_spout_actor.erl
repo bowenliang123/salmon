@@ -1,47 +1,35 @@
 %%% -------------------------------------------------------------------
-%%% Author  : simonlbw
+%%% Author  : Administrator
 %%% Description :
 %%%
-%%% Created : 2012-10-27
+%%% Created : 2012-11-22
 %%% -------------------------------------------------------------------
--module(bolt_worker).
+-module(sm_spout_actor).
 
 -behaviour(gen_server).
 %% --------------------------------------------------------------------
 %% Include files
 %% --------------------------------------------------------------------
--include("../include/zkdata_interface.hrl").
+-include("../include/sm.hrl").
+-include("../include/sardine_config_interface.hrl").
 %% --------------------------------------------------------------------
-%% External exportss
+%% External exports
 -export([]).
--export([start_link/3]).
--export([execute/2]).
+-export([start_link/2]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
+-record(state, {topoId, type, typeId, index, module, userData}).
 
 %% ====================================================================
 %% External functions
 %% ====================================================================
-start_link(TopoId, Bolt, Index) ->
-	BoltServerName = sardine_utils:genServerName(bolt, TopoId, Bolt, Index),
-	gen_server:start_link({global,BoltServerName}, bolt_worker, [TopoId, Bolt, Index], []).
-%% 	startrun(TopoId,Bolt,Index).
-
-startrun(TopoId,Spout,Index) ->
-	BoltServerName = sardine_utils:genServerName(bolt, TopoId, Spout, Index),
-	gen_server:cast({global,BoltServerName}, startrun),
-	ok.
-
-execute(Module, SelfServerName)->
-	io:format("it is run~n"),
-	
-	SpoutTuple = Module:nextTuple(),
-	io:format("~p~n",[SpoutTuple]),
-	ToServerList = sardine_utils:getToWorkerList(SelfServerName),
-	emitTuples(SpoutTuple,ToServerList),
-	execute(Module, SelfServerName).
+start_link(SpoutConfig,Index) when is_record(SpoutConfig, spoutConfig) ->
+	#spoutConfig{topoId=TopoId, id=TypeId} = SpoutConfig,
+	ActorName=sm_utils:genServerName(TopoId, spout, TypeId, Index),
+	error_logger:info_msg("Initial ~p:~p~n", [?SPOUT_ACTOR,ActorName]),
+	gen_server:start_link({local,ActorName}, ?MODULE, {SpoutConfig,Index}, []).
 
 %% ====================================================================
 %% Server functions
@@ -55,26 +43,10 @@ execute(Module, SelfServerName)->
 %%          ignore               |
 %%          {stop, Reason}
 %% --------------------------------------------------------------------
-init([TopoId, Name, Index]) ->
-	io:format("it is bolt_server init~n"),
-	SelfServerName = sardine_utils:genServerName(bolt, TopoId, Name, Index),
-	io:format("ServerName:~p~n", [SelfServerName]),
-	SpoutModule = sardine_utils:getModule(bolt, TopoId, Name),
-	io:format("Module:~p~n", [SpoutModule]),
-	
-	WorkerPath = zk:genPath(TopoId, bolt, Name, Index),
-	zk:set(WorkerPath, #worker_info{self_name = SelfServerName, node_name = node()}),
-	
-	
-	OriginalState = #server_state{self_name = SelfServerName,
-								  topo_id = TopoId,
-								  type = bolt,
-								  type_name = Name,
-								  index = Index,
-								  module = SpoutModule},
-	io:format("OriginalState:~p~n", [OriginalState]),
-	
-    {ok, OriginalState}.
+init({SpoutConfig,Index}) when is_record(SpoutConfig, spoutConfig)->
+	#spoutConfig{topoId=TopoId, id=TypeId} = SpoutConfig,
+	Module = sm_utils:getModule(TopoId, spout, TypeId),
+    {ok, #state{topoId=TopoId, type=spout, typeId=TypeId, index=Index, module=Module}}.
 
 %% --------------------------------------------------------------------
 %% Function: handle_call/3
@@ -86,19 +58,9 @@ init([TopoId, Name, Index]) ->
 %%          {stop, Reason, Reply, State}   | (terminate/2 is called)
 %%          {stop, Reason, State}            (terminate/2 is called)
 %% --------------------------------------------------------------------
-handle_call({collect,Tuple}, From, State) ->
-	io:format("Collect:~p~n", [Tuple]),
-	{TopoId, Type, Name} = sardine_utils:getDataFromState(State),
-	Module = sardine_utils:getModule(Type, TopoId, Name),
-	NextTuple = Module:nextTuple(Tuple),
-	io:format("NEXTUPLE:~p~n", [NextTuple]),
-    {reply, State, State};
-handle_call(getServerState, From, State) ->
-    {reply, State, State};
 handle_call(Request, From, State) ->
     Reply = ok,
     {reply, Reply, State}.
-
 
 %% --------------------------------------------------------------------
 %% Function: handle_cast/2
@@ -107,12 +69,6 @@ handle_call(Request, From, State) ->
 %%          {noreply, State, Timeout} |
 %%          {stop, Reason, State}            (terminate/2 is called)
 %% --------------------------------------------------------------------
-
-handle_cast(startrun, State) ->
-	Module = State#server_state.module,
-	SelfServerName = State#server_state.self_name,
-	PID = spawn(bolt_worker,execute,[Module, SelfServerName]),
-	{noreply, State};
 handle_cast(Msg, State) ->
     {noreply, State}.
 
@@ -146,7 +102,3 @@ code_change(OldVsn, State, Extra) ->
 %%% Internal functions
 %% --------------------------------------------------------------------
 
-
-emitTuples(SpoutTuple,ToServerList) ->
-	io:format("emitTuples"),
-	ok.

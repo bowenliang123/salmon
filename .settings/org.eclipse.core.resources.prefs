@@ -1,4 +1,5 @@
 eclipse.preferences.version=1
-encoding//src/sar.erl=UTF-8
-encoding//src/sardine_submitter.erl=UTF-8
-encoding//src/sardine_utils.erl=UTF-8
+encoding//src/sm_boltmsg.erl=UTF-8
+encoding//src/sm_submitter.erl=UTF-8
+encoding//src/sm_utils.erl=UTF-8
+encoding/<project>=UTF-8
