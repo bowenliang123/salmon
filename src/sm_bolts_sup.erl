@@ -51,9 +51,9 @@ start_link()->
 %% --------------------------------------------------------------------
 init([]) ->
 	error_logger:info_msg("Initial ~p~n", [?BOLTS_SUP]),
-    BoltActorServer = {?BOLT_ACTOR,{?BOLT_ACTOR,start_link,[]},
-	                permanent,2000,worker,[?BOLT_ACTOR]},	
-    {ok,{{simple_one_for_one,1,1}, [BoltActorServer]}}.
+ BoltActor = {?BOLT_ACTOR,{?BOLT_ACTOR,start_link,[]},
+	        permanent,2000,worker,[?BOLT_ACTOR]},
+ {ok,{{simple_one_for_one,1,1}, [BoltActor]}}.
 
 %% ====================================================================
 %% Internal functions
