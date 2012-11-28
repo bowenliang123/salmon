@@ -58,7 +58,11 @@ init([]) ->
 	          permanent,infinity,supervisor,[]},
 	Bolts_sup = {?BOLTS_SUP,{?BOLTS_SUP,start_link,[]},
 	          permanent,infinity,supervisor,[]},
-    {ok,{{one_for_all,1,1}, [Spouts_sup, Bolts_sup,Hook_sup]}}.
+	
+	BoltMsg_sup = {?BOLT_MSG_SUP,{?BOLT_MSG_SUP,start_link,[]},
+	          permanent,infinity,supervisor,[]},
+	
+    {ok,{{one_for_all,1,1}, [BoltMsg_sup,Spouts_sup, Bolts_sup,Hook_sup]}}.
 
 %% ====================================================================
 %% Internal functions
