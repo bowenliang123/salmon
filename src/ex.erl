@@ -23,7 +23,7 @@ ex()->
 	Topo1 = sm:setSpout(Topo, "A", moduleA),
 	Topo2 = sm:setSpout(Topo1, "B", moduleB),
 	Topo3 = sm:setBolt(Topo2, "C", ex_bolt),
-	Topo4 = sm:setBolt(Topo3, "D", ex_bolt),
+	Topo4 = sm:setBolt(Topo3, "D", ex_bolt1),
 	Topo5 = sm:shuffleGrouping(Topo4, "A", "C"),
 	Topo6 = sm:shuffleGrouping(Topo5, "B", "C"),
 	Topo7 = sm:shuffleGrouping(Topo6, "C", "D"),
