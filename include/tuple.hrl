@@ -1,1 +1,1 @@
--record(tuple, {content}).
+-record(tuple, {tupleId, content}).
