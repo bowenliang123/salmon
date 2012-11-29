@@ -126,8 +126,7 @@ startFishing(Interval)->
 					supervisor:start_child(?BOLTS_SUP, [TypeConfig, Index])
 			end
 	end,
-	spawn(?MODULE,startFishing,[Interval]),
-	ok.
+	startFishing(Interval).
 
 getReadyToposIdList()->
 	{ok,ToposIdList} = sm_zk:ls(sm_zk:rootPath()),
