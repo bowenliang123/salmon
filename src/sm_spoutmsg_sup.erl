@@ -1,8 +1,8 @@
 %% @author simonlbw
-%% @doc @todo Add description to sm_boltmsg_sup.
+%% @doc @todo Add description to sm_spoutmsg_sup.
 
 
--module(sm_boltmsg_sup).
+-module(sm_spoutmsg_sup).
 -behaviour(supervisor).
 
 -include("../include/sm.hrl").
@@ -16,7 +16,7 @@
 -export([start_link/0]).
 
 start_link()->
-	supervisor:start_link({local,?BOLT_MSG_SUP}, ?MODULE, []).
+	supervisor:start_link({local,?SPOUT_MSG_SUP}, ?MODULE, []).
 
 %% ====================================================================
 %% Behavioural functions 
@@ -40,10 +40,10 @@ start_link()->
 	Modules :: [module()] | dynamic.
 %% ====================================================================
 init([]) ->
-    error_logger:info_msg("Initial ~p~n", [?BOLT_MSG_SUP]),
-    BoltMsgHandler = {?BOLT_MSG_HANDLER,{?BOLT_MSG_HANDLER,start_link,[]},
-	                temporary,1000,worker,[?BOLT_MSG_HANDLER]},
-    {ok,{{simple_one_for_one,1,1}, [BoltMsgHandler]}}.
+    error_logger:info_msg("Initial ~p~n", [?SPOUT_MSG_SUP]),
+  	SpoutMsgHandler = {?SPOUT_MSG_HANDLER,{?SPOUT_MSG_HANDLER,start_link,[]},
+	                temporary,1000,worker,[?SPOUT_MSG_HANDLER]},
+    {ok,{{simple_one_for_one,1,1}, [SpoutMsgHandler]}}.
 
 %% ====================================================================
 %% Internal functions

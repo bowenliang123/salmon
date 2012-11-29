@@ -1,8 +1,8 @@
 %% @author simonlbw
-%% @doc @todo Add description to sm_boltmsg.
+%% @doc @todo Add description to sm_spoutmsg.
 
 
--module(sm_boltmsg).
+-module(sm_spoutmsg).
 -behaviour(gen_server).
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
@@ -17,13 +17,13 @@
 -export([]).
 -export([start_link/3]).
 
-start_link(Tuple,From,BoltConfig) when is_record(BoltConfig, boltConfig)->
-	gen_server:start_link(?MODULE, {Tuple,From,BoltConfig}, []).
+start_link(Tuple,From,SpoutConfig) when is_record(SpoutConfig, spoutConfig) ->
+	gen_server:start_link(?MODULE, {Tuple,From,SpoutConfig}, []).
 
 %% ====================================================================
 %% Behavioural functions 
 %% ====================================================================
--record(state, {tuple, from, boltConfig, sentTupleIdsList}).
+-record(state, {tuple, from, spoutConfig, sentTupleIdsList}).
 
 %% init/1
 %% ====================================================================
@@ -37,18 +37,18 @@ start_link(Tuple,From,BoltConfig) when is_record(BoltConfig, boltConfig)->
 	State :: term(),
 	Timeout :: non_neg_integer() | infinity.
 %% ====================================================================
-init({Tuple, From, BoltConfig}) when is_record(BoltConfig, boltConfig)->
-	error_logger:info_msg("BC:~p~p~n",[self(),BoltConfig]),
+init({Tuple, From, SpoutConfig}) when is_record(SpoutConfig, spoutConfig) ->
+	error_logger:info_msg("BC:~p~p~n",[self(),SpoutConfig]),
 	replyToFrom(Tuple),
-	#boltConfig{to=ToList,topoId=TopoId}=BoltConfig,
+	#spoutConfig{to=ToList,topoId=TopoId}=SpoutConfig,
 	SentTupleIdsList = sendTupleToList(Tuple, ToList, TopoId),
 	if SentTupleIdsList==[]->
 		    error_logger:info_msg("Terminating:~p~n",[self()]),
-			spawn(supervisor,terminate_child,[?BOLT_MSG_SUP,self()]);
-%% 			supervisor:terminate_child(?BOLT_MSG_SUP,self());
+			spawn(supervisor,terminate_child,[?SPOUT_MSG_SUP,self()]);
+%% 			supervisor:terminate_child(?SPOUT_MSG_SUP,self());
 		true->ok
 	end,
-    {ok, #state{tuple=Tuple,from=From,boltConfig=BoltConfig,sentTupleIdsList=SentTupleIdsList}}.
+ {ok, #state{tuple=Tuple,from=From,spoutConfig=SpoutConfig,sentTupleIdsList=SentTupleIdsList}}.
 
 
 %% handle_call/3
@@ -95,7 +95,7 @@ handle_cast({ack, TupleId}, State) ->
 		true->
 		   error_logger:info_msg("!!!"),
 		   error_logger:info_msg("Terminating:~p~n",[self()]),
-		   supervisor:terminate_child(?BOLT_MSG_SUP,self());
+		   supervisor:terminate_child(?SPOUT_MSG_SUP,self());
 	   false->
 		   error_logger:info_msg("---"),
 			  ok
