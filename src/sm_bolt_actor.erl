@@ -29,7 +29,6 @@
 start_link(BoltConfig,Index) when is_record(BoltConfig, boltConfig)->
 	#boltConfig{topoId=TopoId, id=TypeId} = BoltConfig,
 	ActorName=sm_utils:genServerName(TopoId, bolt, TypeId, Index),
-	error_logger:info_msg("Start ~p:~p~n", [?BOLT_ACTOR,ActorName]),
 	gen_server:start_link({local,ActorName}, ?MODULE, {BoltConfig,Index}, []).
 
 %% ====================================================================
@@ -49,7 +48,8 @@ init({BoltConfig,Index}) when is_record(BoltConfig, boltConfig)->
 	ActorName=sm_utils:genServerName(TopoId, bolt, TypeId, Index),
 	error_logger:info_msg("Initial ~p:~p~n", [?BOLT_ACTOR,ActorName]),
 	Module = sm_utils:getModule(TopoId, bolt, TypeId),
-    {ok, #state{config=BoltConfig}}.
+	UserData=Module:init(),
+    {ok, #state{config=BoltConfig,userData=UserData}}.
 
 %% --------------------------------------------------------------------
 %% Function: handle_call/3
@@ -72,13 +72,14 @@ handle_call(Request, From, State) ->
 %%          {noreply, State, Timeout} |
 %%          {stop, Reason, State}            (terminate/2 is called)
 %% --------------------------------------------------------------------
-handle_cast({nextTuple, Tuple, From}, State) ->
+handle_cast({nextTuple, Tuple, From}, State) when is_pid(From)->
 	#state{config=BoltConfig,userData=UserData}=State,
 	Module=BoltConfig#boltConfig.module,
 	{ok, Tuple1, UserData1}=Module:nextTuple(Tuple,UserData),
 	error_logger:info_msg("From:~pTupleDealed!!:~p~n",[From,Tuple1]),
 	State1 = State#state{userData=UserData1},
 	supervisor:start_child(?BOLT_MSG_SUP,[Tuple1,From,BoltConfig]),
+	gen_server:cast(From,{ack,Tuple#tuple.tupleId}),
     {noreply, State1};
 handle_cast(Msg, State) ->
     {noreply, State}.

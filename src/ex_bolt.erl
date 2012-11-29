@@ -13,16 +13,17 @@
 -export([]).
 -export([init/0, nextTuple/2]).
 
--record(state,{}).
+-record(userData,{n}).
 
 init()->
-	#state{}.
+	#userData{n=0}.
 
-nextTuple(Tuple, State)
+nextTuple(Tuple, UserData)
   when is_record(Tuple, tuple)->
 	Content = Tuple#tuple.content,
-	Content1 = string:concat(Content, "!!!"),
-	State1 = State,
+	N=UserData#userData.n,
+	Content1 = sm_utils:concatStrs([Content,N+1]),
+	State1 = UserData#userData{n=N + 1},
 	{ok, #tuple{content=Content1}, State1}.
 %% ====================================================================
 %% Internal functions

@@ -11,6 +11,7 @@
 %% Include files
 %% --------------------------------------------------------------------
 -include("../include/sm.hrl").
+-include("../include/tuple.hrl").
 -include("../include/sardine_config_interface.hrl").
 %% --------------------------------------------------------------------
 %% External exports
@@ -20,7 +21,7 @@
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
--record(state, {topoId, type, typeId, index, module, userData}).
+-record(state, {config, userData}).
 
 %% ====================================================================
 %% External functions
@@ -45,8 +46,11 @@ start_link(SpoutConfig,Index) when is_record(SpoutConfig, spoutConfig) ->
 %% --------------------------------------------------------------------
 init({SpoutConfig,Index}) when is_record(SpoutConfig, spoutConfig)->
 	#spoutConfig{topoId=TopoId, id=TypeId} = SpoutConfig,
+	ActorName=sm_utils:genServerName(TopoId, spout, TypeId, Index),
+	error_logger:info_msg("Initial ~p:~p~n", [?SPOUT_ACTOR,ActorName]),
 	Module = sm_utils:getModule(TopoId, spout, TypeId),
-    {ok, #state{topoId=TopoId, type=spout, typeId=TypeId, index=Index, module=Module}}.
+	UserData=Module:init(),
+    {ok, #state{config=SpoutConfig,userData=UserData}}.
 
 %% --------------------------------------------------------------------
 %% Function: handle_call/3
@@ -69,6 +73,15 @@ handle_call(Request, From, State) ->
 %%          {noreply, State, Timeout} |
 %%          {stop, Reason, State}            (terminate/2 is called)
 %% --------------------------------------------------------------------
+handle_cast({nextTuple, Tuple, From}, State) when is_pid(From)->
+	#state{config=SpoutConfig,userData=UserData}=State,
+	Module=SpoutConfig#spoutConfig.module,
+	{ok, Tuple1, UserData1}=Module:nextTuple(Tuple,UserData),
+	error_logger:info_msg("From:~pTupleDealed!!:~p~n",[From,Tuple1]),
+	State1 = State#state{userData=UserData1},
+	supervisor:start_child(?SPOUT_MSG_SUP,[Tuple1,From,SpoutConfig]),
+	gen_server:cast(From,{ack,Tuple#tuple.tupleId}),
+    {noreply, State1};
 handle_cast(Msg, State) ->
     {noreply, State}.
 
