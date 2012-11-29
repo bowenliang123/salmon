@@ -74,8 +74,7 @@ getModule(TopoId, Type, Name) when is_atom(Type) ->
 %% Local Functions
 %%
 
-concatStrs([],ResultStr)->
-	ResultStr;
+
 concatStrs([H|T], ResultStr) ->
 	if
 		is_number(H) ->
@@ -84,6 +83,7 @@ concatStrs([H|T], ResultStr) ->
 			concatStrs(T,string:concat(ResultStr, atom_to_list(H)));
 		true->
 			concatStrs(T,string:concat(ResultStr, H))
-	end.
-
+	end;
+concatStrs([],ResultStr)->
+	ResultStr.
 
