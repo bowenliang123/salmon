@@ -13,10 +13,12 @@
 -include("../include/sm.hrl").
 -include("../include/tuple.hrl").
 -include("../include/sardine_config_interface.hrl").
+-include("../include/sm_topostatus.hrl").
 %% --------------------------------------------------------------------
 %% External exports
 -export([]).
 -export([start_link/2]).
+-export([loopSpring/2]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
@@ -50,6 +52,7 @@ init({SpoutConfig,Index}) when is_record(SpoutConfig, spoutConfig)->
 	error_logger:info_msg("Initial ~p:~p~n", [?SPOUT_ACTOR,ActorName]),
 	Module = sm_utils:getModule(TopoId, spout, TypeId),
 	UserData=Module:init(),
+	spawn_link(?MODULE, loopSpring, [SpoutConfig,Index]),
     {ok, #state{config=SpoutConfig,userData=UserData}}.
 
 %% --------------------------------------------------------------------
@@ -62,6 +65,14 @@ init({SpoutConfig,Index}) when is_record(SpoutConfig, spoutConfig)->
 %%          {stop, Reason, Reply, State}   | (terminate/2 is called)
 %%          {stop, Reason, State}            (terminate/2 is called)
 %% --------------------------------------------------------------------
+handle_call({nextTuple, FromPId}, From, State) when is_pid(FromPId)->
+	#state{config=SpoutConfig,userData=UserData}=State,
+	Module=SpoutConfig#spoutConfig.module,
+	{ok, Tuple1, UserData1}=Module:nextTuple(UserData),
+	error_logger:info_msg("TupleEmitFromSpout!!~p:~p~n",[FromPId,Tuple1]),
+	State1 = State#state{userData=UserData1},
+	supervisor:start_child(?SPOUT_MSG_SUP,[Tuple1,FromPId,SpoutConfig]),
+    {reply, ok, State1};
 handle_call(Request, From, State) ->
     Reply = ok,
     {reply, Reply, State}.
@@ -73,15 +84,7 @@ handle_call(Request, From, State) ->
 %%          {noreply, State, Timeout} |
 %%          {stop, Reason, State}            (terminate/2 is called)
 %% --------------------------------------------------------------------
-handle_cast({nextTuple, Tuple, From}, State) when is_pid(From)->
-	#state{config=SpoutConfig,userData=UserData}=State,
-	Module=SpoutConfig#spoutConfig.module,
-	{ok, Tuple1, UserData1}=Module:nextTuple(Tuple,UserData),
-	error_logger:info_msg("From:~pTupleDealed!!:~p~n",[From,Tuple1]),
-	State1 = State#state{userData=UserData1},
-	supervisor:start_child(?SPOUT_MSG_SUP,[Tuple1,From,SpoutConfig]),
-	gen_server:cast(From,{ack,Tuple#tuple.tupleId}),
-    {noreply, State1};
+
 handle_cast(Msg, State) ->
     {noreply, State}.
 
@@ -114,4 +117,14 @@ code_change(OldVsn, State, Extra) ->
 %% --------------------------------------------------------------------
 %%% Internal functions
 %% --------------------------------------------------------------------
-
+loopSpring(SpoutConfig,Index) when is_record(SpoutConfig, spoutConfig)->
+	#spoutConfig{topoId=TopoId, id=TypeId} = SpoutConfig,
+	ActorName=sm_utils:genServerName(TopoId, spout, TypeId, Index),
+	case sm_zk:getTopoStatus(TopoId) of
+		?TOPO_STATUS_READY->
+			timer:sleep(1),
+			gen_server:call(ActorName,{nextTuple, self()});
+		?TOPO_STATUS_PREPARE->ok
+%% 			error_logger:info_msg("NOT READY YET")
+	end,
+	loopSpring(SpoutConfig,Index).
