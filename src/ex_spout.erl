@@ -11,22 +11,17 @@
 %% API functions
 %% ====================================================================
 -export([]).
--export([init/0, nextTuple/2]).
+-export([init/0, nextTuple/1]).
 
 -record(userData,{}).
 
 init()->
 	#userData{}.
 
-nextTuple(Tuple, UserData)
-  when is_record(Tuple, tuple)->
-	Content = Tuple#tuple.content,
-	Content1 = string:concat(Content, "!!!"),
+nextTuple(UserData) ->
+	Content1 = "From Spout",
 	State1 = UserData,
 	{ok, #tuple{content=Content1}, State1}.
 %% ====================================================================
 %% Internal functions
 %% ====================================================================
-
-
-	
