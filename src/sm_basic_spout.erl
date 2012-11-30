@@ -8,7 +8,7 @@
 %% ====================================================================
 -export([]).
 -export([behaviour_info/1]).  
--export([init/1, nextTuple/3]).
+-export([init/1, nextTuple/2]).
 
 behaviour_info(callbacks) ->  
     [{init,0},
@@ -20,8 +20,8 @@ behaviour_info(_Other) ->
 init(Mod) ->
 	State = Mod:init().
 
-nextTuple(Mod, Tuple, State)->
-	{ok,Tuple1,State1} = Mod:nextTuple(Tuple, State).
+nextTuple(Mod, State)->
+	{ok,Tuple1,State1} = Mod:nextTuple(State).
 	
 	
 %% ====================================================================

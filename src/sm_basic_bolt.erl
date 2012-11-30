@@ -12,7 +12,7 @@
 
 behaviour_info(callbacks) ->  
     [{init,0},
-	 {nextTuple,1}];  
+	 {nextTuple,2}];  
 behaviour_info(_Other) ->  
     undefined.  
 
