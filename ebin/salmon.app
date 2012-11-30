@@ -8,5 +8,5 @@
                   stdlib
                  ]},
   {mod, {salmon, []}},
-  {env, [{default_hook_interval, 100}]}
+  {env, [{default_hook_interval, 500}]}
  ]}.
