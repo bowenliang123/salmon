@@ -38,17 +38,16 @@ start_link(Tuple,From,SpoutConfig) when is_record(SpoutConfig, spoutConfig) ->
 	Timeout :: non_neg_integer() | infinity.
 %% ====================================================================
 init({Tuple, From, SpoutConfig}) when is_record(SpoutConfig, spoutConfig) ->
-	error_logger:info_msg("BC:~p~p~n",[self(),SpoutConfig]),
+	error_logger:info_msg("Init ~p:~p~p~n",[?SPOUT_MSG_HANDLER,self(),SpoutConfig]),
 	replyToFrom(Tuple),
 	#spoutConfig{to=ToList,topoId=TopoId}=SpoutConfig,
 	SentTupleIdsList = sendTupleToList(Tuple, ToList, TopoId),
 	if SentTupleIdsList==[]->
-		    error_logger:info_msg("Terminating:~p~n",[self()]),
-			spawn(supervisor,terminate_child,[?SPOUT_MSG_SUP,self()]);
-%% 			supervisor:terminate_child(?SPOUT_MSG_SUP,self());
+			error_logger:info_msg("Terminating ~p:~p~n",[?SPOUT_MSG_HANDLER,self()]),
+			spawn(supervisor,terminate_child,[?BOLT_MSG_SUP,self()]);
 		true->ok
 	end,
- {ok, #state{tuple=Tuple,from=From,spoutConfig=SpoutConfig,sentTupleIdsList=SentTupleIdsList}}.
+	{ok, #state{tuple=Tuple,from=From,spoutConfig=SpoutConfig,sentTupleIdsList=SentTupleIdsList}}.
 
 
 %% handle_call/3
@@ -87,17 +86,12 @@ handle_call(Request, From, State) ->
 handle_cast({ack, TupleId}, State) ->
 	SentTupleIdsList = State#state.sentTupleIdsList,
 	SentTupleIdsList1 = lists:delete(TupleId, SentTupleIdsList),
-	Flag=SentTupleIdsList1==[],
-	error_logger:info_msg("ack:~p~p~n",[TupleId,SentTupleIdsList]),
-	error_logger:info_msg("SentTupleIdsList1~p~nFlag~p~n",[SentTupleIdsList1,Flag]),
-	
-	case Flag of
+	error_logger:info_msg("ack:~p~p~p~n",[TupleId,SentTupleIdsList,SentTupleIdsList1]),
+	case SentTupleIdsList1==[] of
 		true->
-		   error_logger:info_msg("!!!"),
-		   error_logger:info_msg("Terminating:~p~n",[self()]),
+		   error_logger:info_msg("Terminating ~p:~p~n",[?SPOUT_MSG_HANDLER,self()]),
 		   supervisor:terminate_child(?SPOUT_MSG_SUP,self());
 	   false->
-		   error_logger:info_msg("---"),
 			  ok
 	end,
 	State1 = State#state{sentTupleIdsList=SentTupleIdsList1},

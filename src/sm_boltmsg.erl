@@ -38,14 +38,13 @@ start_link(Tuple,From,BoltConfig) when is_record(BoltConfig, boltConfig)->
 	Timeout :: non_neg_integer() | infinity.
 %% ====================================================================
 init({Tuple, From, BoltConfig}) when is_record(BoltConfig, boltConfig)->
-	error_logger:info_msg("BC:~p~p~n",[self(),BoltConfig]),
+	error_logger:info_msg("Init ~p:~p~p~n",[?BOLT_MSG_HANDLER,self(),BoltConfig]),
 	replyToFrom(Tuple),
 	#boltConfig{to=ToList,topoId=TopoId}=BoltConfig,
 	SentTupleIdsList = sendTupleToList(Tuple, ToList, TopoId),
 	if SentTupleIdsList==[]->
-		    error_logger:info_msg("Terminating:~p~n",[self()]),
+		    error_logger:info_msg("Terminating ~p:~p~n",[?BOLT_MSG_HANDLER,self()]),
 			spawn(supervisor,terminate_child,[?BOLT_MSG_SUP,self()]);
-%% 			supervisor:terminate_child(?BOLT_MSG_SUP,self());
 		true->ok
 	end,
     {ok, #state{tuple=Tuple,from=From,boltConfig=BoltConfig,sentTupleIdsList=SentTupleIdsList}}.
@@ -87,17 +86,12 @@ handle_call(Request, From, State) ->
 handle_cast({ack, TupleId}, State) ->
 	SentTupleIdsList = State#state.sentTupleIdsList,
 	SentTupleIdsList1 = lists:delete(TupleId, SentTupleIdsList),
-	Flag=SentTupleIdsList1==[],
-	error_logger:info_msg("ack:~p~p~n",[TupleId,SentTupleIdsList]),
-	error_logger:info_msg("SentTupleIdsList1~p~nFlag~p~n",[SentTupleIdsList1,Flag]),
-	
-	case Flag of
+	error_logger:info_msg("ack:~p~p~p~n",[TupleId,SentTupleIdsList,SentTupleIdsList1]),
+	case SentTupleIdsList1==[] of
 		true->
-		   error_logger:info_msg("!!!"),
-		   error_logger:info_msg("Terminating:~p~n",[self()]),
+		   error_logger:info_msg("Terminating ~p:~p~n",[?SPOUT_MSG_HANDLER,self()]),
 		   supervisor:terminate_child(?BOLT_MSG_SUP,self());
 	   false->
-		   error_logger:info_msg("---"),
 			  ok
 	end,
 	State1 = State#state{sentTupleIdsList=SentTupleIdsList1},
@@ -154,7 +148,7 @@ replyToFrom(Tuple)->
 	ok.
 
 sendTupleToList(Tuple, ToList, TopoId)->
-	error_logger:info_msg("ToList~p~n",[ToList]),
+%% 	error_logger:info_msg("ToList~p~n",[ToList]),
 	sendTupleToList(Tuple, ToList, TopoId, []).
 sendTupleToList(Tuple, [H|T] = _ToList, TopoId, ResultList)->
 	{TypeId,Grouping} = H,
@@ -166,7 +160,7 @@ sendTupleToList(Tuple, [H|T] = _ToList, TopoId, ResultList)->
 			sendTupleToList(Tuple, T, TopoId, lists:append([ResultList,ResultTupleIdList]))
 	end;
 sendTupleToList(_, [], _, ResultList)->
-	error_logger:info_msg("SentTupleIdList~p~n",[ResultList]),
+%% 	error_logger:info_msg("SentTupleIdList~p~n",[ResultList]),
 	ResultList.
 
 sendTupleToIndexList(Tuple, TopoId, TypeId, IndexList)->
