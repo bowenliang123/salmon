@@ -21,7 +21,7 @@
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
--record(state, {config, userData}).
+-record(state, {config, index, userData}).
 
 %% ====================================================================
 %% External functions
@@ -49,7 +49,7 @@ init({BoltConfig,Index}) when is_record(BoltConfig, boltConfig)->
 	error_logger:info_msg("Initial ~p:~p~n", [?BOLT_ACTOR,ActorName]),
 	Module = sm_utils:getModule(TopoId, bolt, TypeId),
 	UserData=Module:init(),
-    {ok, #state{config=BoltConfig,userData=UserData}}.
+    {ok, #state{config=BoltConfig, index=Index, userData=UserData}}.
 
 %% --------------------------------------------------------------------
 %% Function: handle_call/3
@@ -61,6 +61,9 @@ init({BoltConfig,Index}) when is_record(BoltConfig, boltConfig)->
 %%          {stop, Reason, Reply, State}   | (terminate/2 is called)
 %%          {stop, Reason, State}            (terminate/2 is called)
 %% --------------------------------------------------------------------
+handle_call(check, From, State) ->
+    error_logger:info_msg("~p~n",[State]),
+    {reply, ok, State};
 handle_call(Request, From, State) ->
     Reply = ok,
     {reply, Reply, State}.
@@ -73,16 +76,18 @@ handle_call(Request, From, State) ->
 %%          {stop, Reason, State}            (terminate/2 is called)
 %% --------------------------------------------------------------------
 handle_cast({nextTuple, Tuple, From}, State) when is_pid(From)->
-	#state{config=BoltConfig,userData=UserData}=State,
-	Module=BoltConfig#boltConfig.module,
-	{ok, Tuple1, UserData1}=Module:nextTuple(Tuple,UserData),
-	error_logger:info_msg("From:~pTupleDealed!!:~p~n",[From,Tuple1]),
-	State1 = State#state{userData=UserData1},
-	supervisor:start_child(?BOLT_MSG_SUP,[Tuple1,From,BoltConfig]),
 	gen_server:cast(From,{ack,Tuple#tuple.tupleId}),
-    {noreply, State1};
-handle_cast(Msg, State) ->
-    {noreply, State}.
+	#state{config=BoltConfig,userData=UserData}=State,
+	#boltConfig{module=Module,to=To}=BoltConfig,
+	{ok, Tuple1, UserData1}=Module:nextTuple(Tuple,UserData),
+	case To of
+		[]->ok;
+		[_H|_]->
+			supervisor:start_child(?BOLT_MSG_SUP,[Tuple1,From,BoltConfig])
+	end,
+    {noreply, State#state{userData=UserData1}}.
+%% handle_cast(Msg, State) ->
+%%     {noreply, State}.
 
 %% --------------------------------------------------------------------
 %% Function: handle_info/2

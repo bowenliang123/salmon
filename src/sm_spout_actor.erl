@@ -65,17 +65,15 @@ init({SpoutConfig,Index}) when is_record(SpoutConfig, spoutConfig)->
 %%          {stop, Reason, Reply, State}   | (terminate/2 is called)
 %%          {stop, Reason, State}            (terminate/2 is called)
 %% --------------------------------------------------------------------
-handle_call({nextTuple, FromPId}, From, State) when is_pid(FromPId)->
+handle_call({nextTuple, FromPId}, _From, State) when is_pid(FromPId)->
 	#state{config=SpoutConfig,userData=UserData}=State,
-	Module=SpoutConfig#spoutConfig.module,
+	#spoutConfig{module=Module}=SpoutConfig,
 	{ok, Tuple1, UserData1}=Module:nextTuple(UserData),
-	error_logger:info_msg("TupleEmitFromSpout!!~p:~p~n",[FromPId,Tuple1]),
-	State1 = State#state{userData=UserData1},
 	supervisor:start_child(?SPOUT_MSG_SUP,[Tuple1,FromPId,SpoutConfig]),
-    {reply, ok, State1};
-handle_call(Request, From, State) ->
-    Reply = ok,
-    {reply, Reply, State}.
+    {reply, ok, State#state{userData=UserData1}}.
+%% handle_call(Request, From, State) ->
+%%     Reply = ok,
+%%     {reply, Reply, State}.
 
 %% --------------------------------------------------------------------
 %% Function: handle_cast/2
@@ -117,14 +115,19 @@ code_change(OldVsn, State, Extra) ->
 %% --------------------------------------------------------------------
 %%% Internal functions
 %% --------------------------------------------------------------------
-loopSpring(SpoutConfig,Index) when is_record(SpoutConfig, spoutConfig)->
+loopSpring(SpoutConfig,Index)->
+	loopSpring(SpoutConfig,Index,0).
+loopSpring(SpoutConfig,Index,N) when is_record(SpoutConfig, spoutConfig)->
 	#spoutConfig{topoId=TopoId, id=TypeId} = SpoutConfig,
 	ActorName=sm_utils:genServerName(TopoId, spout, TypeId, Index),
 	case sm_zk:getTopoStatus(TopoId) of
 		?TOPO_STATUS_READY->
-			timer:sleep(1),
-			gen_server:call(ActorName,{nextTuple, self()});
-		?TOPO_STATUS_PREPARE->ok
-%% 			error_logger:info_msg("NOT READY YET")
-	end,
-	loopSpring(SpoutConfig,Index).
+%% 			timer:sleep(1),
+			gen_server:call(ActorName,{nextTuple, self()}),
+%%			error_logger:info_msg("~p~n",[N]),
+			loopSpring(SpoutConfig,Index,N+1);
+		_->
+			loopSpring(SpoutConfig,Index,0)
+	end.
+	
+	

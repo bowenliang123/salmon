@@ -32,7 +32,7 @@
 
 %% Check if an application already launched
 getConnection() ->
-	startEzk(),
+%% 	startEzk(),
 	{ok, Connections} = ezk:get_connections(),
 	case Connections of
 		[{ConnPid,_}|_]->

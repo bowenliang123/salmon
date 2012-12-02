@@ -38,12 +38,9 @@ start_link(Tuple,From,SpoutConfig) when is_record(SpoutConfig, spoutConfig) ->
 	Timeout :: non_neg_integer() | infinity.
 %% ====================================================================
 init({Tuple, From, SpoutConfig}) when is_record(SpoutConfig, spoutConfig) ->
-	error_logger:info_msg("Init ~p:~p~p~n",[?SPOUT_MSG_HANDLER,self(),SpoutConfig]),
-	replyToFrom(Tuple),
 	#spoutConfig{to=ToList,topoId=TopoId}=SpoutConfig,
 	SentTupleIdsList = sendTupleToList(Tuple, ToList, TopoId),
 	if SentTupleIdsList==[]->
-			error_logger:info_msg("Terminating ~p:~p~n",[?SPOUT_MSG_HANDLER,self()]),
 			spawn(supervisor,terminate_child,[?BOLT_MSG_SUP,self()]);
 		true->ok
 	end,
@@ -86,10 +83,8 @@ handle_call(Request, From, State) ->
 handle_cast({ack, TupleId}, State) ->
 	SentTupleIdsList = State#state.sentTupleIdsList,
 	SentTupleIdsList1 = lists:delete(TupleId, SentTupleIdsList),
-	error_logger:info_msg("ack:~p~p~p~n",[TupleId,SentTupleIdsList,SentTupleIdsList1]),
 	case SentTupleIdsList1==[] of
 		true->
-		   error_logger:info_msg("Terminating ~p:~p~n",[?SPOUT_MSG_HANDLER,self()]),
 		   supervisor:terminate_child(?SPOUT_MSG_SUP,self());
 	   false->
 			  ok
@@ -144,11 +139,8 @@ code_change(OldVsn, State, Extra) ->
 %% Internal functions
 %% ====================================================================
 
-replyToFrom(Tuple)->
-	ok.
-
 sendTupleToList(Tuple, ToList, TopoId)->
-	error_logger:info_msg("ToList~p~n",[ToList]),
+%% 	error_logger:info_msg("ToList~p~n",[ToList]),
 	sendTupleToList(Tuple, ToList, TopoId, []).
 sendTupleToList(Tuple, [H|T] = _ToList, TopoId, ResultList)->
 	{TypeId,Grouping} = H,
@@ -160,7 +152,7 @@ sendTupleToList(Tuple, [H|T] = _ToList, TopoId, ResultList)->
 			sendTupleToList(Tuple, T, TopoId, lists:append([ResultList,ResultTupleIdList]))
 	end;
 sendTupleToList(_, [], _, ResultList)->
-	error_logger:info_msg("SentTupleIdList~p~n",[ResultList]),
+%% 	error_logger:info_msg("SentTupleIdList~p~n",[ResultList]),
 	ResultList.
 
 sendTupleToIndexList(Tuple, TopoId, TypeId, IndexList)->

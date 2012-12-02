@@ -24,6 +24,7 @@ nextTuple(Tuple, UserData)
 	N=UserData#userData.n,
 	Content1 = sm_utils:concatStrs([Content,N+1]),
 	State1 = UserData#userData{n=N + 1},
+%%	error_logger:info_msg("~p!!!~n",[N]),
 	{ok, #tuple{content=Content1}, State1}.
 %% ====================================================================
 %% Internal functions

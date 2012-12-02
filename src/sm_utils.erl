@@ -13,6 +13,7 @@
 %%
 -export([]).
 -export([concatStrs/1]).
+-export([conAtoms/1]).
 -export([isInList/2]).
 -export([file_exist/1]).
 -export([genServerName/4]).
@@ -24,8 +25,11 @@
 
 
 
-concatStrs(Str) ->
-	concatStrs(Str,"").
+concatStrs(StrList) when is_list(StrList)->
+	concatStrs(StrList,"").
+
+conAtoms(AtomList) when is_list(AtomList)->
+	list_to_atom(conAtomsToList(AtomList)).
 
 file_exist(Filename) ->
     case file:read_file_info(Filename) of
@@ -69,7 +73,6 @@ getModule(TopoId, Type, Name) when is_atom(Type) ->
 
 
 
-
 %%
 %% Local Functions
 %%
@@ -86,4 +89,14 @@ concatStrs([H|T], ResultStr) ->
 	end;
 concatStrs([],ResultStr)->
 	ResultStr.
+
+
+
+conAtomsToList([H|T]=AtomList) when is_atom(H) and is_list(T)->
+	case T of
+		[]->
+			atom_to_list(H);
+		_->
+			sm_utils:concatStrs([atom_to_list(H), conAtomsToList(T)])
+	end.
 

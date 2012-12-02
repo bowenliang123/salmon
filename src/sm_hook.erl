@@ -30,7 +30,6 @@
 %% External functions
 %% ====================================================================
 start_link()->
-	error_logger:info_msg("Initial ~p~n",[?MODULE]),
 	gen_server:start_link({local,?HOOK}, ?MODULE, [], []).
 
 %% ====================================================================
@@ -111,7 +110,7 @@ startFishing(Interval)->
 		?NOT_FOUND->
 			ok;
 		{?FOUND, {TopoId, Type, TypeId, Index}} = Response->
-			error_logger:info_msg("WE GOT ~p~n",[Response]),
+%% 			error_logger:info_msg("WE GOT ~p~n",[Response]),
 			ActorName = sm_utils:genServerName(TopoId, Type, TypeId, Index),
 			Path=sm_zk:genPath(TopoId, Type, TypeId, Index),
 			sm_zk:set(Path, {ActorName,node()}),
@@ -119,10 +118,8 @@ startFishing(Interval)->
 			{ok, TypeConfig} = sm_zk:get(Path1),
 			case Type of
 				spout->
-					error_logger:info_msg("Spout!~p~n",[ActorName]),
 					supervisor:start_child(?SPOUTS_SUP, [TypeConfig, Index]);
 				bolt->
-					error_logger:info_msg("Bolt!~p~n",[ActorName]),
 					supervisor:start_child(?BOLTS_SUP, [TypeConfig, Index])
 			end
 	end,
