@@ -31,7 +31,6 @@
 start_link(SpoutConfig,Index) when is_record(SpoutConfig, spoutConfig) ->
 	#spoutConfig{topoId=TopoId, id=TypeId} = SpoutConfig,
 	ActorName=sm_utils:genServerName(TopoId, spout, TypeId, Index),
-	error_logger:info_msg("Initial ~p:~p~n", [?SPOUT_ACTOR,ActorName]),
 	gen_server:start_link({local,ActorName}, ?MODULE, {SpoutConfig,Index}, []).
 
 %% ====================================================================
@@ -65,6 +64,8 @@ init({SpoutConfig,Index}) when is_record(SpoutConfig, spoutConfig)->
 %%          {stop, Reason, Reply, State}   | (terminate/2 is called)
 %%          {stop, Reason, State}            (terminate/2 is called)
 %% --------------------------------------------------------------------
+handle_call({check, FromPid},_,State)->
+	{reply,State,State};
 handle_call({nextTuple, FromPId}, _From, State) when is_pid(FromPId)->
 	#state{config=SpoutConfig,userData=UserData}=State,
 	#spoutConfig{module=Module}=SpoutConfig,
@@ -119,15 +120,21 @@ loopSpring(SpoutConfig,Index)->
 	loopSpring(SpoutConfig,Index,0).
 loopSpring(SpoutConfig,Index,N) when is_record(SpoutConfig, spoutConfig)->
 	#spoutConfig{topoId=TopoId, id=TypeId} = SpoutConfig,
-	ActorName=sm_utils:genServerName(TopoId, spout, TypeId, Index),
 	case sm_zk:getTopoStatus(TopoId) of
 		?TOPO_STATUS_READY->
-%% 			timer:sleep(1),
+			ActorName=sm_utils:genServerName(TopoId, spout, TypeId, Index),
 			gen_server:call(ActorName,{nextTuple, self()}),
 %%			error_logger:info_msg("~p~n",[N]),
+%% 			if N rem 2000==0 ->
+%% 				   error_logger:info_msg("loopSpring:~p~n",[N]);
+%% 			   true->
+%% 				   ok
+%% 			end,
 			loopSpring(SpoutConfig,Index,N+1);
 		_->
+			timer:sleep(2000),
 			loopSpring(SpoutConfig,Index,0)
 	end.
+
 	
 	

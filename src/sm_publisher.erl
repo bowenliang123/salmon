@@ -33,9 +33,11 @@ publishTopo(Cluster, TopoId, Topo) when is_record(Topo, topoConfig)->
 	{ok, ConnPId} = getTempConn(Cluster),
 	{ok, _ToposIdList} = sm_zk:ls(ConnPId, "/topos"),
 	Path = sm_zk:genPath(TopoId),
-	sm_zk:delete_all(ConnPId, Path),
-	sm_zk:create(ConnPId, Path, Topo),
-	R = sm_zk:setTopoStatus(TopoId, ?TOPO_STATUS_PREPARE),
+%% 	sm_zk:delete_all(ConnPId, Path),
+	sm_zk:delete_all(Path),
+%% 	sm_zk:create(ConnPId, Path, Topo),
+	sm_zk:create(Path, Topo),
+	{ok,R} = sm_zk:setTopoStatus(TopoId, ?TOPO_STATUS_PREPARE),
 	error_logger:info_msg("~p~n",[R]),
 	ezk:end_connection(ConnPId, "initialTopo").
 

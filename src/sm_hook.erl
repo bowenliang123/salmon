@@ -47,6 +47,9 @@ start_link()->
 init([]) ->
 	error_logger:info_msg("Initial ~p~n", [?MODULE]),
 	{ok, DEFAULT_HOOK_INTERVAL} = application:get_env(default_hook_interval),
+	{ok, EzkConnsCount} = application:get_env(max_ezk_conns_count),
+	{ok, EzkConnsPidList}=initialEzkConns(EzkConnsCount),
+	ok=putConnPidsToEts(EzkConnsPidList),
 	spawn_link(?MODULE,startFishing,[DEFAULT_HOOK_INTERVAL]),
     {ok, #state{}}.
 
@@ -103,8 +106,27 @@ code_change(OldVsn, State, Extra) ->
 %% --------------------------------------------------------------------
 %%% Internal functions
 %% --------------------------------------------------------------------
+initialEzkConns(EzkConnsCount) when EzkConnsCount>0 ->
+	EzkConnsPidList = initSingleEzkConn(EzkConnsCount, []),
+	{ok,EzkConnsPidList}.
+
+initSingleEzkConn(0, ResultList) ->
+	ResultList;
+initSingleEzkConn(EzkConnsCount, ResultList) ->
+	{ok, ConnPid} = ezk:start_connection(),
+	initSingleEzkConn(EzkConnsCount-1, [ConnPid|ResultList]).
+
+putConnPidsToEts(EzkConnsPidList) ->
+	ets:new(?TAB_ZK_CONNSPOOL,[named_table,{keypos,1}]),
+	putConnPidsToEts(EzkConnsPidList,0).
+putConnPidsToEts([H|T]=_EzkConnsPidList, Index) ->
+	ets:insert(?TAB_ZK_CONNSPOOL, {Index, H}),
+	putConnPidsToEts(T, Index+1);
+putConnPidsToEts([], _Index)->
+	ok.
+
+
 startFishing(Interval)->
-	timer:sleep(Interval),
 	ReadyToposIdList = getReadyToposIdList(),
 	case getFirstEmptyActor(ReadyToposIdList) of
 		?NOT_FOUND->
@@ -123,6 +145,7 @@ startFishing(Interval)->
 					supervisor:start_child(?BOLTS_SUP, [TypeConfig, Index])
 			end
 	end,
+	timer:sleep(Interval),
 	startFishing(Interval).
 
 getReadyToposIdList()->
@@ -218,3 +241,6 @@ findFirstEmptyActor(TopoId, Type, TypeId, [H|T]=_ActorIndexList) ->
 	end;
 findFirstEmptyActor(_, _, _, []) ->
 	?NOT_FOUND.
+
+
+

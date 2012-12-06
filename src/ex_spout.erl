@@ -13,15 +13,15 @@
 -export([]).
 -export([init/0, nextTuple/1]).
 
--record(userData,{}).
+-record(userData,{n}).
 
 init()->
-	#userData{}.
+	#userData{n=0}.
 
 nextTuple(UserData) ->
 	Content1 = "From Spout",
-	State1 = UserData,
-	{ok, #tuple{content=Content1}, State1}.
+	N=UserData#userData.n,
+	{ok, #tuple{content=Content1}, UserData#userData{n=N+1}}.
 %% ====================================================================
 %% Internal functions
 %% ====================================================================

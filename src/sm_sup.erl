@@ -52,6 +52,9 @@ start_link() ->
 %% --------------------------------------------------------------------
 init([]) ->
 	error_logger:info_msg("Initial ~p~n", [?SM_SUP]),
+	ZkSitter_sup = {?ZK_SITTER_SUP,{?ZK_SITTER_SUP,start_link,[]},
+	          permanent,infinity,supervisor,[]},
+	
 	Hook_sup = {?HOOK_SUP,{?HOOK_SUP,start_link,[]},
 	          permanent,infinity,supervisor,[]},
     Spouts_sup = {?SPOUTS_SUP,{?SPOUTS_SUP,start_link,[]},
@@ -64,7 +67,7 @@ init([]) ->
 	BoltMsg_sup = {?BOLT_MSG_SUP,{?BOLT_MSG_SUP,start_link,[]},
 	          permanent,infinity,supervisor,[]},
 	
-    {ok,{{one_for_all,1,1}, [SpoutMsg_sup, BoltMsg_sup,Spouts_sup, Bolts_sup,Hook_sup]}}.
+    {ok,{{one_for_all,1,1}, [ZkSitter_sup, SpoutMsg_sup, BoltMsg_sup,Spouts_sup, Bolts_sup,Hook_sup]}}.
 
 %% ====================================================================
 %% Internal functions

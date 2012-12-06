@@ -61,9 +61,8 @@ init({BoltConfig,Index}) when is_record(BoltConfig, boltConfig)->
 %%          {stop, Reason, Reply, State}   | (terminate/2 is called)
 %%          {stop, Reason, State}            (terminate/2 is called)
 %% --------------------------------------------------------------------
-handle_call(check, From, State) ->
-    error_logger:info_msg("~p~n",[State]),
-    {reply, ok, State};
+handle_call({check, FromPid},_,State)->
+	{reply,State,State};
 handle_call(Request, From, State) ->
     Reply = ok,
     {reply, Reply, State}.

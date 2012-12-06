@@ -8,5 +8,6 @@
                   stdlib
                  ]},
   {mod, {salmon, []}},
-  {env, [{default_hook_interval, 100}]}
+  {env, [{default_hook_interval, 1000},
+  		{max_ezk_conns_count, 50}]}
  ]}.

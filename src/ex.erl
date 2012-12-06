@@ -13,7 +13,7 @@
 %%
 -export([ex/0]).
 -export([xx/0,yy/0]).
--export([a/0,aa/0,bb/0]).
+-export([a/0,d/0,b/0,bb/0,c/0,cc/0,f/0]).
 
 %%
 %% API Functions
@@ -21,9 +21,9 @@
 
 ex()->
 	Topo = sm:newTopo("t1"),
-	Topo1 = sm:setSpout(Topo, "A", ex_spout,1),
+	Topo1 = sm:setSpout(Topo, "A", ex_spout, 5),
 %% 	Topo2 = sm:setSpout(Topo1, "B", ex_spout),
-	Topo3 = sm:setBolt(Topo1, "C", ex_bolt,4),
+	Topo3 = sm:setBolt(Topo1, "C", ex_bolt,1),
 %% 	Topo4 = sm:setBolt(Topo3, "D", ex_bolt1,2),
 	Topo5 = sm:shuffleGrouping(Topo3, "A", "C"),
 %% 	Topo6 = sm:shuffleGrouping(Topo5, "B", "C"),
@@ -35,30 +35,51 @@ ex()->
 xx()->
 	application:start(sasl),
 	application:start(ezk),
+	toolbar:start(),
 	ex:ex().
 
 yy()->
 	appmon:start(),
 	application:start(salmon).
 
-a()->
-	spawn(?MODULE,aa,[]).
-aa()->
-	ActorName=sm_utils:genServerName("t1", bolt, "C", 0),
-	gen_server:call(ActorName,check),
-	ActorName1=sm_utils:genServerName("t1", bolt, "C", 1),
-	gen_server:call(ActorName1,check),
-	ActorName2=sm_utils:genServerName("t1", bolt, "C", 2),
-	gen_server:call(ActorName2,check),
-	ActorName3=sm_utils:genServerName("t1", bolt, "C", 3),
-	gen_server:call(ActorName3,check),
+d()->
+	b(),
+	c().
+
+b()->
+	spawn(?MODULE,bb,[]).
+bb()->
+	ActorName=sm_utils:genServerName("t1", spout, "A", 0),
+	R=gen_server:call(ActorName,{check,self()}),
+	error_logger:info_msg("~p~p~n",[ActorName,R]),
 	timer:sleep(1000),
-	aa().
+	bb().
+
+c()->
+	spawn(?MODULE,cc,[]).
+cc()->
+	ActorName=sm_utils:genServerName("t1", bolt, "C", 0),
+	R=gen_server:call(ActorName,{check,self()}),
+	error_logger:info_msg("~p~p~n",[ActorName,R]),
+	timer:sleep(1000),
+	cc().
+
+%% e()->
+%% 	spawn(?MODULE,ee,[]).
+%% ee()->
+%% %% 	ActorName=sm_utils:genServerName("t1", spout, "A", 0),
+%% 	R=gen_server:call(hi, check),
+%% 	error_logger:info_msg("~p~p~n",[hi,R]),
+%% 	timer:sleep(1000),
+%% 	ee().
+
 %% 	gen_server:cast(ActorName,{nextTuple,#tuple{content="lbw"},self()}).
 
-bb()->
+a()->
 	sm_zk:setTopoStatus("t1", ?TOPO_STATUS_READY).
 %%
 %% Local Functions
 %%
-
+f()->
+	sm_zk:ls("/"),
+	f().
