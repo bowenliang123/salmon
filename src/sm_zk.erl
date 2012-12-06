@@ -6,6 +6,7 @@
 %%
 %% Include files
 %%
+-include("../include/sm.hrl").
 -include("../include/sm_topostatus.hrl").
 %%
 %% Exported Functions
@@ -32,15 +33,23 @@
 
 %% Check if an application already launched
 getConnection() ->
+	gen_server:cast(hi,plus),
+	{ok, EzkConnsCount} = {ok, 50},
+	random:seed(erlang:now()),
+	SelectedEzkConnIndex = trunc(random:uniform()*EzkConnsCount),
+	[{SelectedEzkConnIndex,ConnPid}|_]=ets:lookup(?TAB_ZK_CONNSPOOL,SelectedEzkConnIndex),
+%% 	error_logger:info_msg("EzkPID:~p~p~n",[SelectedEzkConnIndex,ConnPid]),
+	{ok,ConnPid}.
 %% 	startEzk(),
-	{ok, Connections} = ezk:get_connections(),
-	case Connections of
-		[{ConnPid,_}|_]->
-			{ok, ConnPid};
-		[]->
-			{ok, _ConnPid} = ezk:start_connection()
-	end.
-
+%% 	{ok, Connections} = ezk:get_connections(),
+%% 	case Connections of
+%% 		[{ConnPid,_}|_]->
+%% 			{ok, ConnPid};
+%% 		[]->
+%% 			{ok, _ConnPid} = ezk:start_connection()
+%% 	end.
+	
+	
 startConnection(Servers) when is_list(Servers)->
 	startEzk(),
 	{ok, _ConnPid} = ezk:start_connection(Servers).
@@ -76,8 +85,11 @@ exists(ConnPid, Path) when is_pid(ConnPid) ->
 
 
 get(Path) ->
-	{ok,ConnPid} =  sm_zk:getConnection(),
-	get(ConnPid, Path).
+	A=sm_zksitter:checkout(Path),
+%% 	error_logger:info_msg("~p~n",[A]),
+	A.
+%% 	{ok,ConnPid} =  sm_zk:getConnection(),
+%% 	get(ConnPid, Path).
 
 get(ConnPid, Path) when is_pid(ConnPid) ->
 	Response = ezk:get(ConnPid,Path),	
@@ -160,8 +172,12 @@ delete_all(ConnPid, Path) when is_pid(ConnPid)->
 %% High-level zk operations
 getTopoStatus(TopoId)->
 	Path = sm_utils:concatStrs([sm_zk:genPath(TopoId), "/", status]),
-	{ok, Status} = sm_zk:get(Path),
-	Status.
+	case sm_zk:get(Path) of
+		{ok, Status}->
+			Status;
+		R->
+			R
+	end.
 
 setTopoStatus(TopoId, Status) when is_atom(Status)->
 	Path = sm_utils:concatStrs([sm_zk:genPath(TopoId), "/", status]),
